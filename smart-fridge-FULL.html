@@ -395,18 +395,6 @@
             <div id="imageStatus" class="status-msg purple"></div>
 
             <div class="divider"></div>
-            <div class="sec-label">💬 שאל את השף</div>
-            <div style="display:flex;flex-direction:column;gap:8px;height:280px;">
-                <div id="chatMessages" style="flex:1;overflow-y:auto;background:rgba(0,0,0,0.2);border-radius:8px;padding:10px;border:1px solid var(--border);font-size:0.82em;display:flex;flex-direction:column;gap:6px;"></div>
-                <div style="display:flex;gap:6px;">
-                    <input type="text" id="chatInput" placeholder="לדוגמא: סושי עם אורז..." autocomplete="off"
-                        style="flex:1;font-size:0.82em;"
-                        onkeypress="if(event.key==='Enter') sendChat()">
-                    <button onclick="sendChat()" class="btn-green" style="padding:8px 12px;font-size:0.9em;">🚀</button>
-                </div>
-            </div>
-
-            <div class="divider"></div>
             <div style="font-size:.7em;color:#1e293b;">🔐 API מנוהל בשרת · לא חשוף בקוד</div>
         </div>
     </div>
@@ -423,6 +411,7 @@
             <button class="tab-btn active" onclick="showTab('food',this)">🍽 אוכל</button>
             <button class="tab-btn" onclick="showTab('dessert',this)">🍰 קינוחים</button>
             <button class="tab-btn" onclick="showTab('favorites',this)">❤️ שמורים</button>
+            <button class="tab-btn" onclick="showTab('chat',this)">💬 שאל את השף</button>
         </div>
 
         <div id="pane-food">
@@ -436,6 +425,17 @@
         <div id="pane-favorites" style="display:none;">
             <div class="no-data" id="favEmpty">אין מתכונים שמורים — לחץ ❤️ על מתכון</div>
             <div class="recipe-grid" id="favGrid" style="display:none;"></div>
+        </div>
+        <div id="pane-chat" style="display:none;">
+            <div style="display:flex;flex-direction:column;gap:12px;height:600px;">
+                <div id="chatMessages" style="flex:1;overflow-y:auto;background:rgba(0,0,0,0.15);border-radius:10px;padding:12px;border:1px solid var(--border);font-size:0.85em;display:flex;flex-direction:column;gap:8px;"></div>
+                <div style="display:flex;gap:8px;">
+                    <input type="text" id="chatInput" placeholder="לדוגמא: סושי עם אורז, קינוח קל..." autocomplete="off"
+                        style="flex:1;font-size:0.85em;background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:10px;color:var(--text);"
+                        onkeypress="if(event.key==='Enter') sendChat()">
+                    <button onclick="sendChat()" class="btn-green" style="padding:10px 16px;font-size:1em;">🚀</button>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -613,13 +613,14 @@
 
     // ============ TABS ============
     function showTab(name, btnEl) {
-        ['food','dessert','favorites'].forEach(n => {
+        ['food','dessert','favorites','chat'].forEach(n => {
             document.getElementById('pane-'+n).style.display = 'none';
         });
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
         document.getElementById('pane-'+name).style.display = 'block';
         btnEl.classList.add('active');
         if (name === 'favorites') renderFavorites();
+        if (name === 'chat') document.getElementById('chatInput').focus();
     }
 
     // ============ QUIZ ============
