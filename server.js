@@ -122,6 +122,46 @@ app.post('/api/fetch-receipt', async (req, res) => {
   }
 });
 
+// Chat endpoint - talk to the chef
+app.post('/api/chat', async (req, res) => {
+  const { message, fridgeItems } = req.body;
+  if (!message) return res.status(400).json({ error: 'הודעה חסרה' });
+
+  try {
+    const claudeRes = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': API_KEY,
+        'anthropic-version': '2023-06-01'
+      },
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 600,
+        messages: [{
+          role: 'user',
+          content: `אתה שף חבר מומחה. המשתמש בקש משהו ספציפי.
+
+במקרר שלהם: ${fridgeItems && fridgeItems.length ? fridgeItems.join(', ') : 'ריק'}
+
+בקשה: "${message}"
+
+אם הם ביקשו מתכון ספציפי: תן מתכון קצר וקל (עברית, 2-3 שלבים בלבד).
+אם זו שאלה או בקשה אחרת: תן תשובה קצרה וחבורתית.
+עברית נכונה בלבד, ללא טעויות כתיב. תשובה קצרה וישירה.`
+        }]
+      })
+    });
+
+    const data = await claudeRes.json();
+    res.json(data);
+
+  } catch (error) {
+    console.error('Chat error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Serve HTML
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'smart-fridge-FULL.html'));
