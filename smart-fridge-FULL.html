@@ -150,6 +150,8 @@
             background:linear-gradient(135deg,rgba(74,222,128,.22),rgba(74,222,128,.1));
             box-shadow:0 0 18px rgba(74,222,128,.15);
         }
+        @keyframes spinWheel{0%{transform:rotateZ(0deg)}100%{transform:rotateZ(360deg)}}
+        .spinning{animation:spinWheel 0.6s ease-out !important;}
 
         /* TAGS */
         .tags-box{
@@ -401,7 +403,7 @@
             </div>
 
             <button class="btn-generate" onclick="generateRecipes()">✨ צור מתכונים</button>
-            <button class="btn-quiz" onclick="openQuiz()" id="quizBtn">🤔 לא יודע מה לאכול?</button>
+            <button class="btn-quiz" onclick="playMysteryDish()" id="mysteryBtn">🎡 משחק ההפתעה!</button>
 
             <div class="divider"></div>
             <div class="sec-label">📥 ייבוא מצרכים</div>
@@ -654,6 +656,49 @@
         btnEl.classList.add('active');
         if (name === 'favorites') renderFavorites();
         if (name === 'chat') document.getElementById('chatInput').focus();
+    }
+
+    // ============ MYSTERY DISH GAME ============
+    async function playMysteryDish() {
+        if (!fridgeItems.length) { showToast('🎡 הוסף מוצרים למקרר קודם!'); return; }
+
+        const btn = document.getElementById('mysteryBtn');
+        btn.classList.add('spinning');
+
+        setTimeout(async () => {
+            btn.classList.remove('spinning');
+            const randomItems = [];
+            for (let i = 0; i < Math.min(3, fridgeItems.length); i++) {
+                randomItems.push(fridgeItems[Math.floor(Math.random() * fridgeItems.length)]);
+            }
+
+            const prompt = `אתה שף מצחיק ומעודד. משחקון ילדים - בחרנו 3 מצרכים אקראיים: ${randomItems.join(', ')}
+            עשה מתכון משעשע ומגניב מהם (יכול להיות משהו בדיוני/צחוק), תוך כדי עידוד הילד להמשיך להשתמש באפליקציה!
+            החזר ONLY JSON: {"title":"שם מצחיק","description":"תיאור משעשע","fun_tip":"טיפ משעשע","emoji":"emoji רלוונטי"}`;
+
+            try {
+                const res = await fetch('/api/claude', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        model: 'claude-haiku-4-5-20251001',
+                        max_tokens: 400,
+                        messages: [{ role: 'user', content: prompt }]
+                    })
+                });
+
+                const data = await res.json();
+                let text = data.content[0].text.trim();
+                const mdMatch = text.match(/```(?:json)?\n?([\s\S]*?)\n?```/);
+                if (mdMatch) text = mdMatch[1];
+                const dish = JSON.parse(text);
+
+                showToast(`${dish.emoji} ${dish.title}! 🎉`);
+                alert(`🎡 משחק ההפתעה!\n\n${dish.emoji} ${dish.title}\n\n${dish.description}\n\n💡 ${dish.fun_tip}`);
+            } catch(err) {
+                showToast('🎡 משהו השתבש, נסה שוב!');
+            }
+        }, 600);
     }
 
     // ============ QUIZ ============
