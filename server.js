@@ -3,6 +3,9 @@ const express = require('express');
 const cors = require('cors');
 const fetch = require('node-fetch');
 const path = require('path');
+const session = require('express-session');
+const { signup, login } = require('./auth');
+const db = require('./database');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -11,6 +14,11 @@ const API_KEY = process.env.ANTHROPIC_API_KEY;
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
+app.use(session({
+  secret: 'nadriz-secret-key',
+  resave: false,
+  saveUninitialized: true
+}));
 app.use(express.static('.'));
 
 if (!API_KEY) {
@@ -18,8 +26,87 @@ if (!API_KEY) {
   process.exit(1);
 }
 
+// ===== AUTH ROUTES =====
+app.post('/api/auth/signup', async (req, res) => {
+  const { username, password } = req.body;
+  if (!username || !password) return res.status(400).json({ error: 'שם משתמש וסיסמה חובה' });
+
+  try {
+    const user = await signup(username, password);
+    req.session.userId = user.id;
+    res.json({ id: user.id, username: user.username });
+  } catch (err) {
+    res.status(400).json({ error: err });
+  }
+});
+
+app.post('/api/auth/login', async (req, res) => {
+  const { username, password } = req.body;
+  if (!username || !password) return res.status(400).json({ error: 'שם משתמש וסיסמה חובה' });
+
+  try {
+    const user = await login(username, password);
+    req.session.userId = user.id;
+    res.json({ id: user.id, username: user.username });
+  } catch (err) {
+    res.status(400).json({ error: err });
+  }
+});
+
+app.post('/api/auth/logout', (req, res) => {
+  req.session.destroy();
+  res.json({ success: true });
+});
+
+app.get('/api/auth/status', (req, res) => {
+  res.json({ userId: req.session.userId || null });
+});
+
+// ===== FRIDGE CRUD (with user isolation) =====
+app.get('/api/fridge', (req, res) => {
+  const userId = req.session.userId;
+  if (!userId) return res.status(401).json({ error: 'לא מחובר' });
+
+  db.all('SELECT * FROM fridge_items WHERE user_id = ? ORDER BY created_at DESC', [userId], (err, rows) => {
+    if (err) res.status(500).json({ error: err.message });
+    else res.json(rows || []);
+  });
+});
+
+app.post('/api/fridge', (req, res) => {
+  const { item_name, quantity } = req.body;
+  const userId = req.session.userId;
+  if (!userId) return res.status(401).json({ error: 'לא מחובר' });
+
+  db.run(
+    'INSERT INTO fridge_items (user_id, item_name, quantity) VALUES (?, ?, ?)',
+    [userId, item_name, quantity || '1'],
+    function(err) {
+      if (err) res.status(500).json({ error: err.message });
+      else res.json({ id: this.lastID, item_name, quantity });
+    }
+  );
+});
+
+app.delete('/api/fridge/:id', (req, res) => {
+  const userId = req.session.userId;
+  if (!userId) return res.status(401).json({ error: 'לא מחובר' });
+
+  db.run(
+    'DELETE FROM fridge_items WHERE id = ? AND user_id = ?',
+    [req.params.id, userId],
+    function(err) {
+      if (err) res.status(500).json({ error: err.message });
+      else res.json({ success: true });
+    }
+  );
+});
+
 // Proxy endpoint for Claude API
 app.post('/api/claude', async (req, res) => {
+  const userId = req.session.userId;
+  if (!userId) return res.status(401).json({ error: 'לא מחובר' });
+
   try {
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -162,9 +249,9 @@ app.post('/api/chat', async (req, res) => {
   }
 });
 
-// Serve HTML
+// Serve HTML (SaaS version with auth)
 app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'smart-fridge-FULL.html'));
+  res.sendFile(path.join(__dirname, 'smart-fridge-saas.html'));
 });
 
 app.listen(PORT, () => {

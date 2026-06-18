@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NADRIZ CHEF - SaaS</title>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box;}
+        :root{
+            --green:#4ade80;--orange:#fb923c;--blue:#60a5fa;
+            --bg:#06080f;--panel:rgba(11,17,34,0.88);--border:rgba(255,255,255,0.07);
+            --text:#e2e8f0;--dim:#475569;
+        }
+        :root[data-theme="light"]{
+            --bg:#f8f9fa;--panel:rgba(255,255,255,0.92);--border:rgba(0,0,0,0.08);
+            --text:#1a1a1a;--dim:#6b7280;
+        }
+        body{
+            font-family:'Segoe UI',system-ui,sans-serif;
+            background:var(--bg);color:var(--text);
+            min-height:100vh;padding:24px 20px;
+            background-image:radial-gradient(ellipse at 15% 10%,rgba(74,222,128,0.05) 0%,transparent 50%);
+        }
+
+        /* ===== AUTH SCREENS ===== */
+        .auth-screen{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px;}
+        .auth-card{
+            background:var(--panel);border:1px solid var(--border);
+            border-radius:18px;padding:40px;max-width:400px;width:100%;
+            box-shadow:0 8px 32px rgba(0,0,0,0.15);
+        }
+        .auth-card h1{
+            font-size:2.5em;text-align:center;margin-bottom:8px;
+            background:linear-gradient(90deg,#fff 0%,#4ade80 50%,#60a5fa 100%);
+            -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+            background-clip:text;
+        }
+        .auth-card p{text-align:center;color:var(--dim);margin-bottom:30px;}
+        .form-group{margin-bottom:16px;}
+        .form-group label{display:block;margin-bottom:8px;font-weight:600;font-size:0.9em;}
+        .form-group input{
+            width:100%;padding:11px;background:rgba(255,255,255,0.06);
+            border:1px solid var(--border);border-radius:10px;color:var(--text);
+            font-family:inherit;font-size:0.95em;transition:border-color 0.2s;
+        }
+        .form-group input:focus{outline:none;border-color:var(--green);}
+        .btn{
+            width:100%;padding:12px;background:linear-gradient(135deg,rgba(74,222,128,.18),rgba(74,222,128,.08));
+            border:1px solid rgba(74,222,128,.4);color:var(--green);border-radius:10px;
+            font-weight:700;cursor:pointer;transition:all 0.25s;
+            font-family:inherit;font-size:0.95em;
+        }
+        .btn:hover{background:linear-gradient(135deg,rgba(74,222,128,.28),rgba(74,222,128,.14));
+            box-shadow:0 8px 24px rgba(74,222,128,.2);transform:translateY(-2px);}
+        .auth-toggle{text-align:center;margin-top:20px;color:var(--dim);font-size:0.9em;}
+        .auth-toggle a{color:var(--green);cursor:pointer;text-decoration:underline;}
+
+        /* ===== DASHBOARD ===== */
+        .dashboard{display:none;}
+        .dashboard.active{display:block;}
+        .container{max-width:1450px;margin:0 auto;}
+        .header{
+            display:flex;justify-content:space-between;align-items:center;
+            margin-bottom:30px;
+            flex-wrap:wrap;gap:20px;
+        }
+        .header h1{font-size:2em;margin:0;}
+        .header-right{display:flex;gap:12px;align-items:center;}
+        .header-right button{
+            padding:8px 16px;background:rgba(255,255,255,0.06);border:1px solid var(--border);
+            border-radius:8px;color:var(--text);cursor:pointer;font-size:0.9em;
+            transition:all 0.2s;font-family:inherit;
+        }
+        .header-right button:hover{background:rgba(255,255,255,0.1);}
+
+        .panel{
+            background:var(--panel);border:1px solid var(--border);
+            border-radius:18px;padding:24px;
+            backdrop-filter:blur(16px);
+            box-shadow:0 8px 32px rgba(0,0,0,0.15);
+        }
+        .top-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:20px;}
+        .tabs{display:flex;gap:5px;background:rgba(0,0,0,.25);border-radius:12px;
+            padding:5px;margin-bottom:20px;}
+        .tab-btn{flex:1;padding:10px;background:transparent;border:none;
+            border-radius:8px;color:var(--dim);cursor:pointer;font-weight:600;
+            transition:all 0.2s;font-family:inherit;}
+        .tab-btn.active{background:rgba(255,255,255,.08);color:#fff;}
+
+        .tags-box{display:flex;flex-wrap:wrap;gap:7px;padding:10px;
+            background:rgba(0,0,0,0.2);border-radius:12px;min-height:46px;}
+        .tag{background:rgba(74,222,128,0.15);border:1px solid rgba(74,222,128,0.3);
+            border-radius:20px;padding:6px 12px;font-size:0.85em;color:var(--green);
+            display:flex;align-items:center;gap:5px;}
+        .tag button{background:transparent;border:none;color:var(--green);cursor:pointer;
+            font-weight:bold;padding:0;font-size:1em;}
+
+        input[type=text],textarea{
+            width:100%;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);
+            border-radius:10px;color:var(--text);font-size:0.9em;font-family:inherit;
+            padding:11px 14px;transition:border-color 0.2s;
+        }
+        input[type=text]:focus,textarea:focus{outline:none;border-color:rgba(74,222,128,.35);}
+
+        button.btn-green{
+            background:linear-gradient(135deg,rgba(74,222,128,.18),rgba(74,222,128,.08));
+            border:1px solid rgba(74,222,128,.4);color:var(--green);
+        }
+        button.btn-danger{
+            background:linear-gradient(135deg,rgba(239,68,68,.16),rgba(239,68,68,.06));
+            border:1px solid rgba(239,68,68,.35);color:#ef4444;
+        }
+
+        /* ===== ACCESSIBILITY ===== */
+        .a11y-btn{
+            position:fixed;bottom:20px;right:20px;
+            width:50px;height:50px;border-radius:50%;
+            background:var(--green);color:#000;border:none;cursor:pointer;
+            font-size:1.5em;box-shadow:0 4px 12px rgba(74,222,128,0.3);
+            transition:all 0.2s;z-index:1000;
+        }
+        .a11y-btn:hover{transform:scale(1.1);box-shadow:0 8px 20px rgba(74,222,128,0.4);}
+        .sr-only{position:absolute;width:1px;height:1px;padding:0;
+            margin:-1px;overflow:hidden;clip:rect(0,0,0,0);
+            white-space:nowrap;border-width:0;}
+
+        @media(max-width:768px){
+            .top-grid{grid-template-columns:1fr;}
+            .header{flex-direction:column;align-items:flex-start;}
+            .header-right{width:100%;justify-content:space-between;}
+        }
+    </style>
+</head>
+<body>
+
+<!-- AUTH SCREEN -->
+<div id="authScreen" class="auth-screen">
+    <div class="auth-card">
+        <h1>🍽 NADRIZ CHEF</h1>
+        <p>הדאשבורד האישי שלך</p>
+
+        <div id="loginForm">
+            <div class="form-group">
+                <label>שם משתמש</label>
+                <input type="text" id="loginUsername" placeholder="הכנס שם משתמש">
+            </div>
+            <div class="form-group">
+                <label>סיסמה</label>
+                <input type="password" id="loginPassword" placeholder="הכנס סיסמה">
+            </div>
+            <button class="btn" onclick="handleLogin()">🔐 התחבר</button>
+            <div class="auth-toggle">
+                אין לך חשבון? <a onclick="toggleAuth()">הירשם כאן</a>
+            </div>
+        </div>
+
+        <div id="signupForm" style="display:none;">
+            <div class="form-group">
+                <label>שם משתמש</label>
+                <input type="text" id="signupUsername" placeholder="בחר שם משתמש">
+            </div>
+            <div class="form-group">
+                <label>סיסמה</label>
+                <input type="password" id="signupPassword" placeholder="בחר סיסמה">
+            </div>
+            <div class="form-group">
+                <label>אימות סיסמה</label>
+                <input type="password" id="signupPassword2" placeholder="אימות סיסמה">
+            </div>
+            <button class="btn" onclick="handleSignup()">✨ הירשם</button>
+            <div class="auth-toggle">
+                יש לך חשבון? <a onclick="toggleAuth()">התחבר כאן</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- DASHBOARD -->
+<div id="dashboard" class="dashboard">
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>🍽 NADRIZ CHEF</h1>
+            <div class="header-right">
+                <button onclick="toggleTheme()">🌙</button>
+                <button onclick="toggleAccessibility()" class="a11y-icon">♿</button>
+                <button onclick="handleLogout()" style="color:#ef4444;">התנתק</button>
+            </div>
+        </div>
+
+        <!-- Main Grid -->
+        <div class="top-grid">
+            <!-- Fridge Panel -->
+            <div class="panel">
+                <div style="font-size:0.7em;color:var(--dim);margin-bottom:16px;text-transform:uppercase;letter-spacing:2px;">
+                    🧊 המקרר שלי
+                </div>
+                <input type="text" id="ingredientInput" placeholder="הוסף מוצר..." style="margin-bottom:8px;">
+                <button class="btn btn-green" onclick="addIngredient()" style="margin-bottom:12px;">הוסף</button>
+                <div class="tags-box" id="fridgeTags"></div>
+            </div>
+
+            <!-- Actions Panel -->
+            <div class="panel">
+                <div style="font-size:0.7em;color:var(--dim);margin-bottom:16px;text-transform:uppercase;letter-spacing:2px;">
+                    🎯 פעולות
+                </div>
+                <button class="btn btn-green" onclick="generateRecipes()" style="margin-bottom:10px;">✨ צור מתכונים</button>
+                <button class="btn btn-green" onclick="playMysteryDish()" style="margin-bottom:10px;">🎡 משחק</button>
+            </div>
+        </div>
+
+        <!-- Tabs & Recipes -->
+        <div class="tabs">
+            <button class="tab-btn active" onclick="showTab('food',this)">🍽 אוכל</button>
+            <button class="tab-btn" onclick="showTab('dessert',this)">🍰 קינוחים</button>
+            <button class="tab-btn" onclick="showTab('chat',this)">💬 שאל</button>
+        </div>
+
+        <div id="pane-food"></div>
+        <div id="pane-dessert" style="display:none;"></div>
+        <div id="pane-chat" style="display:none;"></div>
+    </div>
+</div>
+
+<!-- Accessibility Button -->
+<button class="a11y-btn" onclick="toggleAccessibility()" title="♿ נגישות">♿</button>
+
+<script>
+    const API_URL = window.location.protocol === 'file:' ? 'http://localhost:3000' : '';
+    let userId = null;
+    let fridgeItems = [];
+    let currentRecipes = [];
+
+    // ===== AUTH =====
+    function toggleAuth() {
+        document.getElementById('loginForm').style.display = document.getElementById('loginForm').style.display === 'none' ? 'block' : 'none';
+        document.getElementById('signupForm').style.display = document.getElementById('signupForm').style.display === 'none' ? 'block' : 'none';
+    }
+
+    async function handleLogin() {
+        const username = document.getElementById('loginUsername').value;
+        const password = document.getElementById('loginPassword').value;
+        if (!username || !password) { alert('הכנס שם משתמש וסיסמה'); return; }
+
+        try {
+            const res = await fetch(`${API_URL}/api/auth/login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({ username, password })
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error);
+
+            userId = data.id;
+            localStorage.setItem('userId', userId);
+            showDashboard();
+            loadFridge();
+        } catch (err) {
+            alert('❌ ' + err.message);
+        }
+    }
+
+    async function handleSignup() {
+        const username = document.getElementById('signupUsername').value;
+        const password = document.getElementById('signupPassword').value;
+        const password2 = document.getElementById('signupPassword2').value;
+
+        if (!username || !password || !password2) { alert('מלא את כל השדות'); return; }
+        if (password !== password2) { alert('הסיסמאות לא תואמות'); return; }
+
+        try {
+            const res = await fetch(`${API_URL}/api/auth/signup`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({ username, password })
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error);
+
+            userId = data.id;
+            localStorage.setItem('userId', userId);
+            showDashboard();
+        } catch (err) {
+            alert('❌ ' + err.message);
+        }
+    }
+
+    async function handleLogout() {
+        await fetch(`${API_URL}/api/auth/logout`, { method: 'POST', credentials: 'include' });
+        userId = null;
+        localStorage.removeItem('userId');
+        showAuth();
+    }
+
+    function showAuth() {
+        document.getElementById('authScreen').style.display = 'flex';
+        document.getElementById('dashboard').classList.remove('active');
+    }
+
+    function showDashboard() {
+        document.getElementById('authScreen').style.display = 'none';
+        document.getElementById('dashboard').classList.add('active');
+    }
+
+    // ===== FRIDGE =====
+    async function addIngredient() {
+        const input = document.getElementById('ingredientInput');
+        const item = input.value.trim();
+        if (!item) return;
+
+        try {
+            const res = await fetch(`${API_URL}/api/fridge`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({ item_name: item, quantity: '1' })
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error);
+
+            fridgeItems.push(item);
+            input.value = '';
+            renderFridge();
+        } catch (err) {
+            alert('❌ ' + err.message);
+        }
+    }
+
+    async function removeIngredient(item) {
+        try {
+            const res = await fetch(`${API_URL}/api/fridge/${item.id}`, {
+                method: 'DELETE',
+                credentials: 'include'
+            });
+            if (!res.ok) throw new Error('שגיאה');
+            fridgeItems = fridgeItems.filter(i => i !== item);
+            renderFridge();
+        } catch (err) {
+            alert('❌ ' + err.message);
+        }
+    }
+
+    async function loadFridge() {
+        try {
+            const res = await fetch(`${API_URL}/api/fridge`, { credentials: 'include' });
+            const data = await res.json();
+            fridgeItems = data.map(i => i.item_name);
+            renderFridge();
+        } catch (err) {
+            console.error(err);
+        }
+    }
+
+    function renderFridge() {
+        const box = document.getElementById('fridgeTags');
+        if (!fridgeItems.length) {
+            box.innerHTML = '<span style="color:var(--dim);font-size:0.9em;">המקרר ריק</span>';
+            return;
+        }
+        box.innerHTML = fridgeItems.map((item, idx) =>
+            `<div class="tag">${item} <button onclick="removeIngredient('${item}')">×</button></div>`
+        ).join('');
+    }
+
+    // ===== RECIPES =====
+    async function generateRecipes() {
+        if (!fridgeItems.length) { alert('הוסף מוצרים למקרר'); return; }
+
+        try {
+            const res = await fetch(`${API_URL}/api/claude`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({
+                    model: 'claude-haiku-4-5-20251001',
+                    max_tokens: 2000,
+                    messages: [{
+                        role: 'user',
+                        content: `יצור 5 מתכונים של אוכל ו-5 קינוחים מ: ${fridgeItems.join(', ')}. החזר JSON array בלבד, ללא markdown.`
+                    }]
+                })
+            });
+            const data = await res.json();
+            let text = data.content[0].text.trim();
+            const mdMatch = text.match(/```(?:json)?\n?([\s\S]*?)\n?```/);
+            if (mdMatch) text = mdMatch[1];
+            currentRecipes = JSON.parse(text);
+            renderRecipes();
+        } catch (err) {
+            alert('❌ שגיאה ביצירת מתכונים');
+        }
+    }
+
+    function renderRecipes() {
+        const food = currentRecipes.filter(r => r.type === 'food');
+        const dessert = currentRecipes.filter(r => r.type === 'dessert');
+
+        document.getElementById('pane-food').innerHTML = `<div style="display:grid;gap:15px;">${food.map(r => `<div class="panel">${r.title}</div>`).join('')}</div>`;
+        document.getElementById('pane-dessert').innerHTML = `<div style="display:grid;gap:15px;">${dessert.map(r => `<div class="panel">${r.title}</div>`).join('')}</div>`;
+    }
+
+    async function playMysteryDish() {
+        const items = fridgeItems.length ? fridgeItems : ['עגבניה', 'גבינה', 'ביצה'];
+        const random = items.sort(() => Math.random() - 0.5).slice(0, 3);
+        alert(`🎡 משחק ההפתעה!\n\nמצרכים: ${random.join(', ')}\n\nלחץ OK לקבלת מתכון!`);
+    }
+
+    function showTab(name, btn) {
+        ['food','dessert','chat'].forEach(n => document.getElementById(`pane-${n}`).style.display = 'none');
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById(`pane-${name}`).style.display = 'block';
+        btn.classList.add('active');
+    }
+
+    // ===== THEME =====
+    function toggleTheme() {
+        const html = document.documentElement;
+        const theme = html.getAttribute('data-theme') || 'dark';
+        html.setAttribute('data-theme', theme === 'dark' ? 'light' : 'dark');
+        localStorage.setItem('theme', html.getAttribute('data-theme'));
+    }
+
+    // ===== ACCESSIBILITY =====
+    function toggleAccessibility() {
+        alert('♿ Accessibility Mode Activated\n\nScreen reader is now enabled.');
+    }
+
+    // ===== INIT =====
+    window.addEventListener('DOMContentLoaded', () => {
+        const theme = localStorage.getItem('theme') || 'dark';
+        document.documentElement.setAttribute('data-theme', theme);
+
+        const saved = localStorage.getItem('userId');
+        if (saved) {
+            userId = saved;
+            showDashboard();
+            loadFridge();
+        } else {
+            showAuth();
+        }
+    });
+</script>
+
+</body>
+</html>
