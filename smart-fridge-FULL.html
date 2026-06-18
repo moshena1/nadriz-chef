@@ -660,16 +660,19 @@
 
     // ============ MYSTERY DISH GAME ============
     async function playMysteryDish() {
-        if (!fridgeItems.length) { showToast('🎡 הוסף מוצרים למקרר קודם!'); return; }
-
         const btn = document.getElementById('mysteryBtn');
         btn.classList.add('spinning');
 
         setTimeout(async () => {
             btn.classList.remove('spinning');
+
+            // אם אין מצרכים - בחר אקראיים מרשימה
+            const defaultItems = ['עגבניה', 'גבינה', 'חזה עוף', 'אורז', 'בצל', 'שום', 'ביצה', 'חמאה', 'חלב', 'לחם', 'תיבול', 'שמן זית'];
+            const items = fridgeItems.length ? fridgeItems : defaultItems;
+
             const randomItems = [];
-            for (let i = 0; i < Math.min(3, fridgeItems.length); i++) {
-                randomItems.push(fridgeItems[Math.floor(Math.random() * fridgeItems.length)]);
+            for (let i = 0; i < 3; i++) {
+                randomItems.push(items[Math.floor(Math.random() * items.length)]);
             }
 
             const prompt = `אתה שף מצחיק ומעודד. משחקון ילדים - בחרנו 3 מצרכים אקראיים: ${randomItems.join(', ')}
