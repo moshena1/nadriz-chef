@@ -209,6 +209,81 @@ app.post('/api/fetch-receipt', async (req, res) => {
   }
 });
 
+// ===== NUTRITION ENDPOINTS =====
+app.post('/api/nutrition/profile', (req, res) => {
+  const userId = req.session.userId;
+  if (!userId) return res.status(401).json({ error: 'לא מחובר' });
+
+  const { age, height, current_weight, target_weight, dietary_preferences, activity_level, goal } = req.body;
+
+  db.run(
+    `INSERT OR REPLACE INTO user_nutrition (user_id, age, height, current_weight, target_weight, dietary_preferences, activity_level, goal)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+    [userId, age, height, current_weight, target_weight, dietary_preferences, activity_level, goal],
+    function(err) {
+      if (err) res.status(500).json({ error: err.message });
+      else res.json({ success: true });
+    }
+  );
+});
+
+app.get('/api/nutrition/profile', (req, res) => {
+  const userId = req.session.userId;
+  if (!userId) return res.status(401).json({ error: 'לא מחובר' });
+
+  db.get('SELECT * FROM user_nutrition WHERE user_id = ?', [userId], (err, row) => {
+    if (err) res.status(500).json({ error: err.message });
+    else res.json(row || {});
+  });
+});
+
+app.post('/api/food-log', (req, res) => {
+  const userId = req.session.userId;
+  if (!userId) return res.status(401).json({ error: 'לא מחובר' });
+
+  const { food_name, quantity, meal_type, calories, protein, carbs, fat, date } = req.body;
+
+  db.run(
+    `INSERT INTO food_log (user_id, food_name, quantity, meal_type, calories, protein, carbs, fat, date)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [userId, food_name, quantity, meal_type, calories, protein, carbs, fat, date || new Date().toISOString().split('T')[0]],
+    function(err) {
+      if (err) res.status(500).json({ error: err.message });
+      else res.json({ id: this.lastID });
+    }
+  );
+});
+
+app.get('/api/food-log/:date', (req, res) => {
+  const userId = req.session.userId;
+  if (!userId) return res.status(401).json({ error: 'לא מחובר' });
+
+  const date = req.params.date || new Date().toISOString().split('T')[0];
+
+  db.all(
+    'SELECT * FROM food_log WHERE user_id = ? AND date = ? ORDER BY created_at',
+    [userId, date],
+    (err, rows) => {
+      if (err) res.status(500).json({ error: err.message });
+      else res.json(rows || []);
+    }
+  );
+});
+
+app.delete('/api/food-log/:id', (req, res) => {
+  const userId = req.session.userId;
+  if (!userId) return res.status(401).json({ error: 'לא מחובר' });
+
+  db.run(
+    'DELETE FROM food_log WHERE id = ? AND user_id = ?',
+    [req.params.id, userId],
+    function(err) {
+      if (err) res.status(500).json({ error: err.message });
+      else res.json({ success: true });
+    }
+  );
+});
+
 // Chat endpoint - talk to the chef
 app.post('/api/chat', async (req, res) => {
   const { message, fridgeItems } = req.body;

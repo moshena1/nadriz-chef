@@ -8,12 +8,12 @@
         *{margin:0;padding:0;box-sizing:border-box;}
         :root{
             --green:#4ade80;--orange:#fb923c;--blue:#60a5fa;
-            --bg:#06080f;--panel:rgba(11,17,34,0.88);--border:rgba(255,255,255,0.07);
-            --text:#e2e8f0;--dim:#475569;
-        }
-        :root[data-theme="light"]{
-            --bg:#f8f9fa;--panel:rgba(255,255,255,0.92);--border:rgba(0,0,0,0.08);
+            --bg:#f8f9fa;--panel:#ffffff;--border:#e5e7eb;
             --text:#1a1a1a;--dim:#6b7280;
+        }
+        :root[data-theme="dark"]{
+            --bg:#06080f;--panel:rgba(11,17,34,0.88);--border:rgba(255,255,255,0.07);
+            --text:#e2e8f0;--dim:#94a3b8;
         }
         body{
             font-family:'Segoe UI',system-ui,sans-serif;
@@ -31,27 +31,26 @@
         }
         .auth-card h1{
             font-size:2.5em;text-align:center;margin-bottom:8px;
-            background:linear-gradient(90deg,#fff 0%,#4ade80 50%,#60a5fa 100%);
+            background:linear-gradient(90deg,#4ade80 0%,#60a5fa 100%);
             -webkit-background-clip:text;-webkit-text-fill-color:transparent;
             background-clip:text;
         }
         .auth-card p{text-align:center;color:var(--dim);margin-bottom:30px;}
         .form-group{margin-bottom:16px;}
-        .form-group label{display:block;margin-bottom:8px;font-weight:600;font-size:0.9em;}
-        .form-group input{
-            width:100%;padding:11px;background:rgba(255,255,255,0.06);
+        .form-group label{display:block;margin-bottom:8px;font-weight:600;font-size:0.9em;color:var(--text);}
+        .form-group input,.form-group select{
+            width:100%;padding:11px;background:var(--bg);
             border:1px solid var(--border);border-radius:10px;color:var(--text);
             font-family:inherit;font-size:0.95em;transition:border-color 0.2s;
         }
-        .form-group input:focus{outline:none;border-color:var(--green);}
+        .form-group input:focus,.form-group select:focus{outline:none;border-color:var(--green);}
         .btn{
-            width:100%;padding:12px;background:linear-gradient(135deg,rgba(74,222,128,.18),rgba(74,222,128,.08));
-            border:1px solid rgba(74,222,128,.4);color:var(--green);border-radius:10px;
+            width:100%;padding:12px;background:linear-gradient(135deg,rgba(74,222,128,.8),rgba(74,222,128,.6));
+            border:none;color:#fff;border-radius:10px;
             font-weight:700;cursor:pointer;transition:all 0.25s;
             font-family:inherit;font-size:0.95em;
         }
-        .btn:hover{background:linear-gradient(135deg,rgba(74,222,128,.28),rgba(74,222,128,.14));
-            box-shadow:0 8px 24px rgba(74,222,128,.2);transform:translateY(-2px);}
+        .btn:hover{opacity:0.9;transform:translateY(-2px);box-shadow:0 8px 24px rgba(74,222,128,.3);}
         .auth-toggle{text-align:center;margin-top:20px;color:var(--dim);font-size:0.9em;}
         .auth-toggle a{color:var(--green);cursor:pointer;text-decoration:underline;}
 
@@ -61,388 +60,618 @@
         .container{max-width:1450px;margin:0 auto;}
         .header{
             display:flex;justify-content:space-between;align-items:center;
-            margin-bottom:30px;
-            flex-wrap:wrap;gap:20px;
+            margin-bottom:30px;flex-wrap:wrap;gap:20px;
         }
         .header h1{font-size:2em;margin:0;}
         .header-right{display:flex;gap:12px;align-items:center;}
         .header-right button{
-            padding:8px 16px;background:rgba(255,255,255,0.06);border:1px solid var(--border);
+            padding:8px 16px;background:var(--border);border:none;
             border-radius:8px;color:var(--text);cursor:pointer;font-size:0.9em;
             transition:all 0.2s;font-family:inherit;
         }
-        .header-right button:hover{background:rgba(255,255,255,0.1);}
+        .header-right button:hover{background:rgba(74,222,128,0.2);}
 
         .panel{
             background:var(--panel);border:1px solid var(--border);
             border-radius:18px;padding:24px;
             backdrop-filter:blur(16px);
-            box-shadow:0 8px 32px rgba(0,0,0,0.15);
+            box-shadow:0 8px 32px rgba(0,0,0,0.08);
         }
         .top-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:20px;}
-        .tabs{display:flex;gap:5px;background:rgba(0,0,0,.25);border-radius:12px;
+        .tabs{display:flex;gap:5px;background:var(--border);border-radius:12px;
             padding:5px;margin-bottom:20px;}
         .tab-btn{flex:1;padding:10px;background:transparent;border:none;
             border-radius:8px;color:var(--dim);cursor:pointer;font-weight:600;
             transition:all 0.2s;font-family:inherit;}
-        .tab-btn.active{background:rgba(255,255,255,.08);color:#fff;}
+        .tab-btn.active{background:var(--green);color:#000;}
 
-        .tags-box{display:flex;flex-wrap:wrap;gap:7px;padding:10px;
-            background:rgba(0,0,0,0.2);border-radius:12px;min-height:46px;}
         .tag{background:rgba(74,222,128,0.15);border:1px solid rgba(74,222,128,0.3);
-            border-radius:20px;padding:6px 12px;font-size:0.85em;color:var(--green);
-            display:flex;align-items:center;gap:5px;}
-        .tag button{background:transparent;border:none;color:var(--green);cursor:pointer;
-            font-weight:bold;padding:0;font-size:1em;}
+            border-radius:20px;padding:6px 12px;font-size:0.85em;color:var(--green);}
 
-        input[type=text],textarea{
-            width:100%;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);
+        input[type=text],input[type=number],input[type=date],select,textarea{
+            width:100%;background:var(--bg);border:1px solid var(--border);
             border-radius:10px;color:var(--text);font-size:0.9em;font-family:inherit;
-            padding:11px 14px;transition:border-color 0.2s;
+            padding:10px;margin-bottom:10px;
         }
-        input[type=text]:focus,textarea:focus{outline:none;border-color:rgba(74,222,128,.35);}
+        textarea{min-height:80px;resize:vertical;}
+        input:focus,select:focus,textarea:focus{outline:none;border-color:var(--green);}
 
-        button.btn-green{
-            background:linear-gradient(135deg,rgba(74,222,128,.18),rgba(74,222,128,.08));
-            border:1px solid rgba(74,222,128,.4);color:var(--green);
+        .food-item{
+            background:var(--border);border-radius:10px;padding:12px;
+            margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;
         }
-        button.btn-danger{
-            background:linear-gradient(135deg,rgba(239,68,68,.16),rgba(239,68,68,.06));
-            border:1px solid rgba(239,68,68,.35);color:#ef4444;
+        .food-item-info{flex:1;}
+        .food-item-name{font-weight:600;margin-bottom:4px;}
+        .food-item-stats{font-size:0.85em;color:var(--dim);}
+        .food-item button{
+            background:#ff6b6b;border:none;color:#fff;padding:6px 12px;
+            border-radius:6px;cursor:pointer;font-weight:600;
         }
+        .food-item button:hover{opacity:0.9;}
 
-        /* ===== ACCESSIBILITY ===== */
-        .a11y-btn{
-            position:fixed;bottom:20px;right:20px;
-            width:50px;height:50px;border-radius:50%;
-            background:var(--green);color:#000;border:none;cursor:pointer;
-            font-size:1.5em;box-shadow:0 4px 12px rgba(74,222,128,0.3);
-            transition:all 0.2s;z-index:1000;
+        .nutrition-summary{
+            display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;
+            margin:20px 0;
         }
-        .a11y-btn:hover{transform:scale(1.1);box-shadow:0 8px 20px rgba(74,222,128,0.4);}
-        .sr-only{position:absolute;width:1px;height:1px;padding:0;
-            margin:-1px;overflow:hidden;clip:rect(0,0,0,0);
-            white-space:nowrap;border-width:0;}
+        .nutrition-card{
+            background:var(--border);border-radius:12px;padding:16px;text-align:center;
+        }
+        .nutrition-card h3{font-size:0.9em;color:var(--dim);margin-bottom:8px;}
+        .nutrition-card .value{font-size:1.8em;font-weight:bold;color:var(--green);}
+        .nutrition-card .unit{font-size:0.85em;color:var(--dim);}
 
+        .hidden{display:none;}
         @media(max-width:768px){
             .top-grid{grid-template-columns:1fr;}
             .header{flex-direction:column;align-items:flex-start;}
-            .header-right{width:100%;justify-content:space-between;}
+            .header-right{width:100%;flex-wrap:wrap;}
         }
     </style>
 </head>
 <body>
 
 <!-- AUTH SCREEN -->
-<div id="authScreen" class="auth-screen">
+<div class="auth-screen" id="authScreen">
     <div class="auth-card">
-        <h1>🍽 NADRIZ CHEF</h1>
-        <p>הדאשבורד האישי שלך</p>
+        <h1>🧑‍🍳</h1>
+        <p id="authTitle">כניסה</p>
 
         <div id="loginForm">
             <div class="form-group">
                 <label>שם משתמש</label>
-                <input type="text" id="loginUsername" placeholder="הכנס שם משתמש">
+                <input type="text" id="loginUsername" placeholder="שם משתמש">
             </div>
             <div class="form-group">
                 <label>סיסמה</label>
-                <input type="password" id="loginPassword" placeholder="הכנס סיסמה">
+                <input type="password" id="loginPassword" placeholder="סיסמה">
             </div>
-            <button class="btn" onclick="handleLogin()">🔐 התחבר</button>
+            <button class="btn" onclick="login()">כניסה</button>
             <div class="auth-toggle">
-                אין לך חשבון? <a onclick="toggleAuth()">הירשם כאן</a>
+                עדיין אין לך חשבון? <a onclick="toggleAuthForm()">הירשם עכשיו</a>
             </div>
         </div>
 
-        <div id="signupForm" style="display:none;">
+        <div id="signupForm" class="hidden">
             <div class="form-group">
                 <label>שם משתמש</label>
                 <input type="text" id="signupUsername" placeholder="בחר שם משתמש">
             </div>
             <div class="form-group">
                 <label>סיסמה</label>
-                <input type="password" id="signupPassword" placeholder="בחר סיסמה">
+                <input type="password" id="signupPassword" placeholder="סיסמה חזקה">
             </div>
-            <div class="form-group">
-                <label>אימות סיסמה</label>
-                <input type="password" id="signupPassword2" placeholder="אימות סיסמה">
-            </div>
-            <button class="btn" onclick="handleSignup()">✨ הירשם</button>
+            <button class="btn" onclick="signup()">הרשמה</button>
             <div class="auth-toggle">
-                יש לך חשבון? <a onclick="toggleAuth()">התחבר כאן</a>
+                כבר יש לך חשבון? <a onclick="toggleAuthForm()">כנס כאן</a>
             </div>
         </div>
     </div>
 </div>
 
 <!-- DASHBOARD -->
-<div id="dashboard" class="dashboard">
+<div class="dashboard" id="dashboard">
     <div class="container">
-        <!-- Header -->
         <div class="header">
-            <h1>🍽 NADRIZ CHEF</h1>
+            <h1>🧑‍🍳 מטבח חכם - <span id="username"></span></h1>
             <div class="header-right">
-                <button onclick="toggleTheme()">🌙</button>
-                <button onclick="toggleAccessibility()" class="a11y-icon">♿</button>
-                <button onclick="handleLogout()" style="color:#ef4444;">התנתק</button>
+                <button onclick="toggleTheme()">🌙 תיאור</button>
+                <button onclick="toggleAccessibility()">♿</button>
+                <button onclick="logout()" style="background:#ff6b6b;">🚪 יציאה</button>
             </div>
         </div>
 
-        <!-- Main Grid -->
-        <div class="top-grid">
-            <!-- Fridge Panel -->
-            <div class="panel">
-                <div style="font-size:0.7em;color:var(--dim);margin-bottom:16px;text-transform:uppercase;letter-spacing:2px;">
-                    🧊 המקרר שלי
+        <!-- TABS -->
+        <div class="panel">
+            <div class="tabs">
+                <button class="tab-btn active" onclick="switchTab('fridge')">🧊 המקרר שלי</button>
+                <button class="tab-btn" onclick="switchTab('recipes')">📖 מתכונים</button>
+                <button class="tab-btn" onclick="switchTab('nutrition')">🥗 תזונה</button>
+                <button class="tab-btn" onclick="switchTab('chat')">💬 שיחה</button>
+            </div>
+
+            <!-- FRIDGE TAB -->
+            <div id="fridgeTab" class="tab-content">
+                <div class="top-grid">
+                    <div>
+                        <h2>הוסף מוצר</h2>
+                        <input type="text" id="itemName" placeholder="שם המוצר">
+                        <input type="text" id="itemQuantity" placeholder="כמות (אופציונלי)">
+                        <button class="btn" onclick="addItem()" style="margin-top:10px;">➕ הוסף</button>
+                    </div>
+                    <div>
+                        <h2>📸 העלה קבלה</h2>
+                        <input type="text" id="receiptUrl" placeholder="הדבק קישור לקבלה">
+                        <button class="btn" onclick="fetchReceipt()" style="margin-top:10px;">🔍 חלץ מוצרים</button>
+                    </div>
                 </div>
-                <input type="text" id="ingredientInput" placeholder="הוסף מוצר..." style="margin-bottom:8px;">
-                <button class="btn btn-green" onclick="addIngredient()" style="margin-bottom:12px;">הוסף</button>
-                <div class="tags-box" id="fridgeTags"></div>
+
+                <h2 style="margin-top:20px;">המוצרים שלי</h2>
+                <div id="fridgeList"></div>
             </div>
 
-            <!-- Actions Panel -->
-            <div class="panel">
-                <div style="font-size:0.7em;color:var(--dim);margin-bottom:16px;text-transform:uppercase;letter-spacing:2px;">
-                    🎯 פעולות
+            <!-- RECIPES TAB -->
+            <div id="recipesTab" class="tab-content hidden">
+                <div class="top-grid">
+                    <div>
+                        <h2>🎲 משחקון מסתרי</h2>
+                        <p style="color:var(--dim);margin-bottom:15px;">בואו נעשה משהו משעשע!</p>
+                        <button class="btn" onclick="playMysteryGame()">🎮 התחל משחק</button>
+                    </div>
+                    <div id="gameOutput" style="padding:15px;background:var(--border);border-radius:12px;"></div>
                 </div>
-                <button class="btn btn-green" onclick="generateRecipes()" style="margin-bottom:10px;">✨ צור מתכונים</button>
-                <button class="btn btn-green" onclick="playMysteryDish()" style="margin-bottom:10px;">🎡 משחק</button>
+
+                <h2 style="margin-top:20px;">מתכוני AI</h2>
+                <input type="text" id="recipeSearch" placeholder="חפש מתכון (למשל: עוגיות שוקולד)">
+                <button class="btn" onclick="searchRecipe()" style="margin-top:10px;margin-bottom:20px;">🔍 חפש</button>
+                <div id="recipeOutput"></div>
+            </div>
+
+            <!-- NUTRITION TAB -->
+            <div id="nutritionTab" class="tab-content hidden">
+                <h2>📊 הפרופיל התזונתי שלי</h2>
+                <div style="background:var(--border);border-radius:12px;padding:20px;margin-bottom:20px;">
+                    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:15px;">
+                        <div>
+                            <label>גיל</label>
+                            <input type="number" id="userAge" placeholder="25">
+                        </div>
+                        <div>
+                            <label>גובה (ס"מ)</label>
+                            <input type="number" id="userHeight" placeholder="180">
+                        </div>
+                        <div>
+                            <label>משקל עכשוו (ק"ג)</label>
+                            <input type="number" id="currentWeight" placeholder="75">
+                        </div>
+                        <div>
+                            <label>משקל יעד (ק"ג)</label>
+                            <input type="number" id="targetWeight" placeholder="70">
+                        </div>
+                        <div>
+                            <label>רמת פעילות</label>
+                            <select id="activityLevel">
+                                <option>נמוכה</option>
+                                <option>בינונית</option>
+                                <option selected>גבוהה</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label>יעד</label>
+                            <select id="goal">
+                                <option>ירידה במשקל</option>
+                                <option>שמירה על משקל</option>
+                                <option selected>עלייה במשקל</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div style="margin-top:15px;">
+                        <label>העדפות תזונתיות (כולל אלרגיות)</label>
+                        <input type="text" id="dietaryPrefs" placeholder="למשל: ווגן, ללא גלוטן, אלרגי לבוטנים">
+                    </div>
+                    <button class="btn" onclick="saveNutritionProfile()" style="margin-top:15px;">💾 שמור פרופיל</button>
+                </div>
+
+                <h2>🍽️ קלוט מזון - היום</h2>
+                <div style="background:var(--border);border-radius:12px;padding:20px;margin-bottom:20px;">
+                    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:15px;">
+                        <div>
+                            <label>שם המזון</label>
+                            <input type="text" id="foodName" placeholder="למשל: עוף צלוי עם אורז">
+                        </div>
+                        <div>
+                            <label>כמות</label>
+                            <input type="text" id="foodQuantity" placeholder="200 גרם">
+                        </div>
+                        <div>
+                            <label>סוג ארוחה</label>
+                            <select id="mealType">
+                                <option>ארוחת בוקר</option>
+                                <option>חטיף</option>
+                                <option selected>ארוחת צהריים</option>
+                                <option>חטיף</option>
+                                <option>ארוחת ערב</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button class="btn" onclick="addFood()" style="margin-top:15px;">➕ הוסף למעקב</button>
+                </div>
+
+                <h2>📈 קלוריות והערכים התזונתיים של היום</h2>
+                <div id="nutritionSummary" class="nutrition-summary"></div>
+
+                <h2 style="margin-top:20px;">🍖 המזונות שלי היום</h2>
+                <div id="foodLog"></div>
+
+                <h2 style="margin-top:20px;">💡 המלצות תזונתיות</h2>
+                <button class="btn" onclick="getNutritionRecommendation()" style="margin-bottom:20px;">🤖 קבל המלצות מ-AI</button>
+                <div id="nutritionRecommendation"></div>
+            </div>
+
+            <!-- CHAT TAB -->
+            <div id="chatTab" class="tab-content hidden">
+                <h2>💬 שיחה עם השף</h2>
+                <div style="background:var(--border);border-radius:12px;padding:15px;min-height:250px;margin-bottom:20px;overflow-y:auto;max-height:300px;" id="chatBox"></div>
+                <input type="text" id="chatInput" placeholder="שאל משהו (מתכון, עצות בישול...)" onkeypress="if(event.key==='Enter') sendChat()">
+                <button class="btn" onclick="sendChat()" style="margin-top:10px;">📤 שלח</button>
             </div>
         </div>
-
-        <!-- Tabs & Recipes -->
-        <div class="tabs">
-            <button class="tab-btn active" onclick="showTab('food',this)">🍽 אוכל</button>
-            <button class="tab-btn" onclick="showTab('dessert',this)">🍰 קינוחים</button>
-            <button class="tab-btn" onclick="showTab('chat',this)">💬 שאל</button>
-        </div>
-
-        <div id="pane-food"></div>
-        <div id="pane-dessert" style="display:none;"></div>
-        <div id="pane-chat" style="display:none;"></div>
     </div>
 </div>
 
-<!-- Accessibility Button -->
-<button class="a11y-btn" onclick="toggleAccessibility()" title="♿ נגישות">♿</button>
-
 <script>
-    const API_URL = window.location.protocol === 'file:' ? 'http://localhost:3000' : '';
-    let userId = null;
-    let fridgeItems = [];
-    let currentRecipes = [];
+const API = 'http://localhost:3000';
 
-    // ===== AUTH =====
-    function toggleAuth() {
-        document.getElementById('loginForm').style.display = document.getElementById('loginForm').style.display === 'none' ? 'block' : 'none';
-        document.getElementById('signupForm').style.display = document.getElementById('signupForm').style.display === 'none' ? 'block' : 'none';
+// AUTH
+async function signup(){
+    const u=document.getElementById('signupUsername').value;
+    const p=document.getElementById('signupPassword').value;
+    if(!u||!p) return alert('שדות חובה');
+    const r=await fetch(`${API}/api/auth/signup`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:u,password:p})});
+    const d=await r.json();
+    if(!r.ok) return alert(d.error);
+    localStorage.setItem('userId',d.id);
+    location.reload();
+}
+
+async function login(){
+    const u=document.getElementById('loginUsername').value;
+    const p=document.getElementById('loginPassword').value;
+    if(!u||!p) return alert('שדות חובה');
+    const r=await fetch(`${API}/api/auth/login`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:u,password:p})});
+    const d=await r.json();
+    if(!r.ok) return alert(d.error);
+    localStorage.setItem('userId',d.id);
+    localStorage.setItem('username',u);
+    location.reload();
+}
+
+async function logout(){
+    await fetch(`${API}/api/auth/logout`,{method:'POST'});
+    localStorage.clear();
+    location.reload();
+}
+
+function toggleAuthForm(){
+    document.getElementById('loginForm').classList.toggle('hidden');
+    document.getElementById('signupForm').classList.toggle('hidden');
+    document.getElementById('authTitle').textContent=document.getElementById('loginForm').classList.contains('hidden')?'הרשמה':'כניסה';
+}
+
+function toggleTheme(){
+    const t=document.documentElement.getAttribute('data-theme');
+    document.documentElement.setAttribute('data-theme',t==='dark'?'light':'dark');
+    localStorage.setItem('theme',t==='dark'?'light':'dark');
+}
+
+function toggleAccessibility(){
+    const m=document.body.style.fontSize;
+    if(m==='18px'){
+        document.body.style.fontSize='16px';
+        localStorage.removeItem('accessibilityMode');
+        alert('מצב הנגישות כבוי');
+    }else{
+        document.body.style.fontSize='18px';
+        localStorage.setItem('accessibilityMode','true');
+        alert('מצב הנגישות פעיל - הטקסט גדול וקל יותר לקריאה');
     }
+}
 
-    async function handleLogin() {
-        const username = document.getElementById('loginUsername').value;
-        const password = document.getElementById('loginPassword').value;
-        if (!username || !password) { alert('הכנס שם משתמש וסיסמה'); return; }
+function switchTab(t){
+    document.querySelectorAll('.tab-content').forEach(e=>e.classList.add('hidden'));
+    document.querySelectorAll('.tab-btn').forEach(e=>e.classList.remove('active'));
+    document.getElementById(t+'Tab').classList.remove('hidden');
+    event.target.classList.add('active');
+}
 
-        try {
-            const res = await fetch(`${API_URL}/api/auth/login`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                credentials: 'include',
-                body: JSON.stringify({ username, password })
-            });
-            const data = await res.json();
-            if (!res.ok) throw new Error(data.error);
+// FRIDGE
+async function addItem(){
+    const n=document.getElementById('itemName').value;
+    if(!n) return alert('הכנס שם מוצר');
+    const q=document.getElementById('itemQuantity').value;
+    const r=await fetch(`${API}/api/fridge`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({item_name:n,quantity:q})});
+    if(!r.ok) return alert('שגיאה');
+    document.getElementById('itemName').value='';
+    document.getElementById('itemQuantity').value='';
+    loadFridge();
+}
 
-            userId = data.id;
-            localStorage.setItem('userId', userId);
-            showDashboard();
+async function loadFridge(){
+    const r=await fetch(`${API}/api/fridge`);
+    const items=await r.json();
+    const l=document.getElementById('fridgeList');
+    l.innerHTML=items.map(i=>`<div class="food-item">
+        <div class="food-item-info">
+            <div class="food-item-name">${i.item_name}</div>
+            <div class="food-item-stats">${i.quantity||'כמות לא מוגדרת'}</div>
+        </div>
+        <button onclick="deleteItem(${i.id})">🗑️</button>
+    </div>`).join('');
+}
+
+async function deleteItem(id){
+    const r=await fetch(`${API}/api/fridge/${id}`,{method:'DELETE'});
+    if(!r.ok) return alert('שגיאה');
+    loadFridge();
+}
+
+async function fetchReceipt(){
+    const url=document.getElementById('receiptUrl').value;
+    if(!url) return alert('הכנס קישור לקבלה');
+    const r=await fetch(`${API}/api/fetch-receipt`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url})});
+    const d=await r.json();
+    if(!r.ok) return alert(d.error);
+    if(d.content&&d.content[0]&&d.content[0].text){
+        try{
+            const items=JSON.parse(d.content[0].text.replace(/```json|```/g,''));
+            for(const item of items){
+                await fetch(`${API}/api/fridge`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({item_name:item,quantity:'מקבלה'})});
+            }
+            alert('✅ המוצרים נוספו!');
             loadFridge();
-        } catch (err) {
-            alert('❌ ' + err.message);
+        }catch(e){
+            alert('שגיאה בעיבוד הנתונים');
         }
     }
+}
 
-    async function handleSignup() {
-        const username = document.getElementById('signupUsername').value;
-        const password = document.getElementById('signupPassword').value;
-        const password2 = document.getElementById('signupPassword2').value;
+// NUTRITION
+async function saveNutritionProfile(){
+    const age=parseInt(document.getElementById('userAge').value);
+    const height=parseInt(document.getElementById('userHeight').value);
+    const current_weight=parseFloat(document.getElementById('currentWeight').value);
+    const target_weight=parseFloat(document.getElementById('targetWeight').value);
+    const activity_level=document.getElementById('activityLevel').value;
+    const goal=document.getElementById('goal').value;
+    const dietary_preferences=document.getElementById('dietaryPrefs').value;
 
-        if (!username || !password || !password2) { alert('מלא את כל השדות'); return; }
-        if (password !== password2) { alert('הסיסמאות לא תואמות'); return; }
-
-        try {
-            const res = await fetch(`${API_URL}/api/auth/signup`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                credentials: 'include',
-                body: JSON.stringify({ username, password })
-            });
-            const data = await res.json();
-            if (!res.ok) throw new Error(data.error);
-
-            userId = data.id;
-            localStorage.setItem('userId', userId);
-            showDashboard();
-        } catch (err) {
-            alert('❌ ' + err.message);
-        }
-    }
-
-    async function handleLogout() {
-        await fetch(`${API_URL}/api/auth/logout`, { method: 'POST', credentials: 'include' });
-        userId = null;
-        localStorage.removeItem('userId');
-        showAuth();
-    }
-
-    function showAuth() {
-        document.getElementById('authScreen').style.display = 'flex';
-        document.getElementById('dashboard').classList.remove('active');
-    }
-
-    function showDashboard() {
-        document.getElementById('authScreen').style.display = 'none';
-        document.getElementById('dashboard').classList.add('active');
-    }
-
-    // ===== FRIDGE =====
-    async function addIngredient() {
-        const input = document.getElementById('ingredientInput');
-        const item = input.value.trim();
-        if (!item) return;
-
-        try {
-            const res = await fetch(`${API_URL}/api/fridge`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                credentials: 'include',
-                body: JSON.stringify({ item_name: item, quantity: '1' })
-            });
-            const data = await res.json();
-            if (!res.ok) throw new Error(data.error);
-
-            fridgeItems.push(item);
-            input.value = '';
-            renderFridge();
-        } catch (err) {
-            alert('❌ ' + err.message);
-        }
-    }
-
-    async function removeIngredient(item) {
-        try {
-            const res = await fetch(`${API_URL}/api/fridge/${item.id}`, {
-                method: 'DELETE',
-                credentials: 'include'
-            });
-            if (!res.ok) throw new Error('שגיאה');
-            fridgeItems = fridgeItems.filter(i => i !== item);
-            renderFridge();
-        } catch (err) {
-            alert('❌ ' + err.message);
-        }
-    }
-
-    async function loadFridge() {
-        try {
-            const res = await fetch(`${API_URL}/api/fridge`, { credentials: 'include' });
-            const data = await res.json();
-            fridgeItems = data.map(i => i.item_name);
-            renderFridge();
-        } catch (err) {
-            console.error(err);
-        }
-    }
-
-    function renderFridge() {
-        const box = document.getElementById('fridgeTags');
-        if (!fridgeItems.length) {
-            box.innerHTML = '<span style="color:var(--dim);font-size:0.9em;">המקרר ריק</span>';
-            return;
-        }
-        box.innerHTML = fridgeItems.map((item, idx) =>
-            `<div class="tag">${item} <button onclick="removeIngredient('${item}')">×</button></div>`
-        ).join('');
-    }
-
-    // ===== RECIPES =====
-    async function generateRecipes() {
-        if (!fridgeItems.length) { alert('הוסף מוצרים למקרר'); return; }
-
-        try {
-            const res = await fetch(`${API_URL}/api/claude`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                credentials: 'include',
-                body: JSON.stringify({
-                    model: 'claude-haiku-4-5-20251001',
-                    max_tokens: 2000,
-                    messages: [{
-                        role: 'user',
-                        content: `יצור 5 מתכונים של אוכל ו-5 קינוחים מ: ${fridgeItems.join(', ')}. החזר JSON array בלבד, ללא markdown.`
-                    }]
-                })
-            });
-            const data = await res.json();
-            let text = data.content[0].text.trim();
-            const mdMatch = text.match(/```(?:json)?\n?([\s\S]*?)\n?```/);
-            if (mdMatch) text = mdMatch[1];
-            currentRecipes = JSON.parse(text);
-            renderRecipes();
-        } catch (err) {
-            alert('❌ שגיאה ביצירת מתכונים');
-        }
-    }
-
-    function renderRecipes() {
-        const food = currentRecipes.filter(r => r.type === 'food');
-        const dessert = currentRecipes.filter(r => r.type === 'dessert');
-
-        document.getElementById('pane-food').innerHTML = `<div style="display:grid;gap:15px;">${food.map(r => `<div class="panel">${r.title}</div>`).join('')}</div>`;
-        document.getElementById('pane-dessert').innerHTML = `<div style="display:grid;gap:15px;">${dessert.map(r => `<div class="panel">${r.title}</div>`).join('')}</div>`;
-    }
-
-    async function playMysteryDish() {
-        const items = fridgeItems.length ? fridgeItems : ['עגבניה', 'גבינה', 'ביצה'];
-        const random = items.sort(() => Math.random() - 0.5).slice(0, 3);
-        alert(`🎡 משחק ההפתעה!\n\nמצרכים: ${random.join(', ')}\n\nלחץ OK לקבלת מתכון!`);
-    }
-
-    function showTab(name, btn) {
-        ['food','dessert','chat'].forEach(n => document.getElementById(`pane-${n}`).style.display = 'none');
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        document.getElementById(`pane-${name}`).style.display = 'block';
-        btn.classList.add('active');
-    }
-
-    // ===== THEME =====
-    function toggleTheme() {
-        const html = document.documentElement;
-        const theme = html.getAttribute('data-theme') || 'dark';
-        html.setAttribute('data-theme', theme === 'dark' ? 'light' : 'dark');
-        localStorage.setItem('theme', html.getAttribute('data-theme'));
-    }
-
-    // ===== ACCESSIBILITY =====
-    function toggleAccessibility() {
-        alert('♿ Accessibility Mode Activated\n\nScreen reader is now enabled.');
-    }
-
-    // ===== INIT =====
-    window.addEventListener('DOMContentLoaded', () => {
-        const theme = localStorage.getItem('theme') || 'dark';
-        document.documentElement.setAttribute('data-theme', theme);
-
-        const saved = localStorage.getItem('userId');
-        if (saved) {
-            userId = saved;
-            showDashboard();
-            loadFridge();
-        } else {
-            showAuth();
-        }
+    const r=await fetch(`${API}/api/nutrition/profile`,{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({age,height,current_weight,target_weight,activity_level,goal,dietary_preferences})
     });
-</script>
+    if(!r.ok) return alert('שגיאה בשמירת הפרופיל');
+    alert('✅ הפרופיל שמור');
+}
 
+async function addFood(){
+    const name=document.getElementById('foodName').value;
+    if(!name) return alert('הכנס שם מזון');
+    const quantity=document.getElementById('foodQuantity').value;
+    const meal_type=document.getElementById('mealType').value;
+
+    const r=await fetch(`${API}/api/claude`,{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({
+            model:'claude-haiku-4-5-20251001',
+            max_tokens:300,
+            messages:[{
+                role:'user',
+                content:`חשב ערכים תזונתיים עבור: ${name} (${quantity}).
+                החזר ONLY JSON (בלי markdown):
+                {"calories":XXX,"protein":X,"carbs":X,"fat":X}`
+            }]
+        })
+    });
+    const d=await r.json();
+    try{
+        const text=d.content[0].text.replace(/```json|```/g,'').trim();
+        const nutrients=JSON.parse(text);
+
+        const fr=await fetch(`${API}/api/food-log`,{
+            method:'POST',
+            headers:{'Content-Type':'application/json'},
+            body:JSON.stringify({food_name:name,quantity,meal_type,...nutrients})
+        });
+        if(!fr.ok) throw new Error('שגיאה בהוספה');
+
+        document.getElementById('foodName').value='';
+        document.getElementById('foodQuantity').value='';
+        loadFoodLog();
+        loadNutritionSummary();
+    }catch(e){
+        alert('שגיאה בחישוב הערכים');
+    }
+}
+
+async function loadFoodLog(){
+    const today=new Date().toISOString().split('T')[0];
+    const r=await fetch(`${API}/api/food-log/${today}`);
+    const items=await r.json();
+    const l=document.getElementById('foodLog');
+    l.innerHTML=items.map(i=>`<div class="food-item">
+        <div class="food-item-info">
+            <div class="food-item-name">${i.food_name}</div>
+            <div class="food-item-stats">${i.meal_type} | ${i.calories} קלוריות | חלבון: ${i.protein}ג</div>
+        </div>
+        <button onclick="deleteFood(${i.id})">🗑️</button>
+    </div>`).join('');
+}
+
+async function deleteFood(id){
+    const r=await fetch(`${API}/api/food-log/${id}`,{method:'DELETE'});
+    if(!r.ok) return alert('שגיאה');
+    loadFoodLog();
+    loadNutritionSummary();
+}
+
+async function loadNutritionSummary(){
+    const today=new Date().toISOString().split('T')[0];
+    const r=await fetch(`${API}/api/food-log/${today}`);
+    const items=await r.json();
+    const totals={calories:0,protein:0,carbs:0,fat:0};
+    items.forEach(i=>{
+        totals.calories+=i.calories||0;
+        totals.protein+=i.protein||0;
+        totals.carbs+=i.carbs||0;
+        totals.fat+=i.fat||0;
+    });
+    document.getElementById('nutritionSummary').innerHTML=`
+        <div class="nutrition-card">
+            <h3>קלוריות</h3>
+            <div class="value">${totals.calories}</div>
+            <div class="unit">קק"ל</div>
+        </div>
+        <div class="nutrition-card">
+            <h3>חלבון</h3>
+            <div class="value">${totals.protein.toFixed(1)}</div>
+            <div class="unit">גרמים</div>
+        </div>
+        <div class="nutrition-card">
+            <h3>פחמימות</h3>
+            <div class="value">${totals.carbs.toFixed(1)}</div>
+            <div class="unit">גרמים</div>
+        </div>
+        <div class="nutrition-card">
+            <h3>שומנים</h3>
+            <div class="value">${totals.fat.toFixed(1)}</div>
+            <div class="unit">גרמים</div>
+        </div>
+    `;
+}
+
+async function getNutritionRecommendation(){
+    const pr=await fetch(`${API}/api/nutrition/profile`);
+    const profile=await pr.json();
+    const fr=await fetch(`${API}/api/food-log/${new Date().toISOString().split('T')[0]}`);
+    const foods=await fr.json();
+
+    const foodList=foods.map(f=>`${f.food_name} (${f.calories} קק"ל)`).join(', ') || 'לא הוספו מזונות';
+
+    const r=await fetch(`${API}/api/claude`,{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({
+            model:'claude-haiku-4-5-20251001',
+            max_tokens:600,
+            messages:[{
+                role:'user',
+                content:`אתה דיאטיסיין מומחה. הפרופיל של המשתמש:
+                גיל: ${profile.age}, גובה: ${profile.height}ס"מ, משקל עכשוו: ${profile.current_weight}ק"ג, משקל יעד: ${profile.target_weight}ק"ג
+                רמת פעילות: ${profile.activity_level}, יעד: ${profile.goal}
+                העדפות: ${profile.dietary_preferences}
+
+                מזונות של היום: ${foodList}
+
+                תן המלצות מותאמות לאישיות זו בעברית (2-3 משפטים קצרים בלבד).`
+            }]
+        })
+    });
+    const d=await r.json();
+    document.getElementById('nutritionRecommendation').innerHTML=`<div style="background:var(--border);border-radius:12px;padding:15px;">${d.content[0].text}</div>`;
+}
+
+// RECIPES
+async function playMysteryGame(){
+    const r=await fetch(`${API}/api/fridge`);
+    const items=await r.json();
+    const fridgeList=items.map(i=>i.item_name).join(', ') || 'פומלה, חלמון, חלב';
+
+    const gameRes=await fetch(`${API}/api/claude`,{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({
+            model:'claude-haiku-4-5-20251001',
+            max_tokens:400,
+            messages:[{
+                role:'user',
+                content:`יצור משחקון재미있는! המשתמש יש במקרר: ${fridgeList}.
+
+                תן לו: 1) משהו לבחור (בחר בן מקרר), 2) תגידו לו מה לעשות איתו בעברית (קצר וחמוד).`
+            }]
+        })
+    });
+    const d=await gameRes.json();
+    document.getElementById('gameOutput').innerHTML=d.content[0].text;
+}
+
+async function searchRecipe(){
+    const q=document.getElementById('recipeSearch').value;
+    if(!q) return alert('הכנס שם מתכון');
+
+    const r=await fetch(`${API}/api/claude`,{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({
+            model:'claude-haiku-4-5-20251001',
+            max_tokens:500,
+            messages:[{
+                role:'user',
+                content:`תן מתכון קצר וקל ל${q} בעברית (3-4 שלבים בלבד).`
+            }]
+        })
+    });
+    const d=await r.json();
+    document.getElementById('recipeOutput').innerHTML=`<div style="background:var(--border);border-radius:12px;padding:15px;white-space:pre-wrap;">${d.content[0].text}</div>`;
+}
+
+// CHAT
+async function sendChat(){
+    const msg=document.getElementById('chatInput').value;
+    if(!msg) return;
+
+    const box=document.getElementById('chatBox');
+    box.innerHTML+=`<div style="margin-bottom:10px;color:var(--green);"><strong>👤 אתה:</strong> ${msg}</div>`;
+    document.getElementById('chatInput').value='';
+
+    const r=await fetch(`${API}/api/fridge`);
+    const items=await r.json();
+    const fridgeList=items.map(i=>i.item_name).join(', ') || 'מקרר ריק';
+
+    const chatRes=await fetch(`${API}/api/chat`,{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({message:msg,fridgeItems:fridgeList.split(', ')})
+    });
+    const d=await chatRes.json();
+    box.innerHTML+=`<div style="margin-bottom:10px;color:var(--blue);"><strong>🧑‍🍳 השף:</strong> ${d.content[0].text}</div>`;
+    box.scrollTop=box.scrollHeight;
+}
+
+// INIT
+async function init(){
+    const theme=localStorage.getItem('theme')||'light';
+    document.documentElement.setAttribute('data-theme',theme);
+
+    if(localStorage.getItem('accessibilityMode')){
+        document.body.style.fontSize='18px';
+    }
+
+    const userId=localStorage.getItem('userId');
+    if(!userId){
+        document.getElementById('authScreen').style.display='flex';
+        document.getElementById('dashboard').style.display='none';
+    }else{
+        document.getElementById('authScreen').style.display='none';
+        document.getElementById('dashboard').classList.add('active');
+        document.getElementById('username').textContent=localStorage.getItem('username')||'חבר';
+        loadFridge();
+        loadFoodLog();
+        loadNutritionSummary();
+    }
+}
+
+window.addEventListener('load',init);
+</script>
 </body>
 </html>
