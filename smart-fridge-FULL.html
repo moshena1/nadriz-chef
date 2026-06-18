@@ -292,7 +292,39 @@
 
         /* RESPONSIVE */
         @media(max-width:1000px){.top-grid{grid-template-columns:1fr 1fr;}}
-        @media(max-width:680px){.top-grid{grid-template-columns:1fr;}.header h1{font-size:2em;}.recipe-grid{grid-template-columns:1fr;}.quiz-options{grid-template-columns:1fr;}body{padding:12px;}}
+        @media(max-width:768px){
+            body{padding:12px 10px;}
+            .container{max-width:100%;}
+            .top-grid{grid-template-columns:1fr;gap:12px;margin-bottom:14px;}
+            .header h1{font-size:1.8em;letter-spacing:4px;}
+            .header-sub{font-size:0.7em;}
+            .panel{padding:14px;border-radius:12px;}
+            .panel-title{font-size:0.65em;margin-bottom:10px;}
+            input[type=text],textarea{font-size:0.85em;padding:9px 10px;}
+            textarea{height:70px;}
+            button{padding:8px 12px;font-size:0.8em;}
+            .btn-green, .btn-danger, .btn-generate, .btn-quiz{padding:11px 14px;}
+            .tabs{gap:3px;padding:3px;}
+            .tab-btn{padding:8px 10px;font-size:0.78em;}
+            .recipe-grid{grid-template-columns:1fr;gap:12px;}
+            .recipe-card{border-radius:12px;}
+            .input-row{gap:6px;margin-bottom:7px;}
+            .divider{margin:10px 0 8px;}
+            .sec-label{font-size:0.65em;margin-bottom:8px;}
+            .tags-box{min-height:40px;padding:6px;gap:5px;}
+            .tag{font-size:0.75em;}
+            .quiz-options{grid-template-columns:1fr;gap:5px;}
+            .quiz-option{padding:9px 10px;font-size:0.8em;}
+            .no-data{padding:40px 12px;font-size:0.85em;}
+            .loading{padding:40px 12px;}
+            .file-btn{font-size:0.77em;padding:8px 10px;}
+            .recipe-title{font-size:1em;}
+            .recipe-desc{font-size:0.8em;}
+            .recipe-section-title{font-size:0.85em;}
+            .nutrition-bar{gap:6px;}
+            .nutr-item{padding:6px;}
+            .status-msg{font-size:0.77em;padding:6px;}
+        }
     </style>
 </head>
 <body>
