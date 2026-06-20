@@ -284,6 +284,135 @@ app.delete('/api/food-log/:id', (req, res) => {
   );
 });
 
+// ===== SAVED RECIPES =====
+app.get('/api/recipes/saved', (req, res) => {
+  const userId = req.session.userId;
+  if (!userId) return res.status(401).json({ error: 'לא מחובר' });
+
+  db.all('SELECT * FROM saved_recipes WHERE user_id = ? ORDER BY saved_at DESC', [userId], (err, rows) => {
+    if (err) res.status(500).json({ error: err.message });
+    else res.json(rows || []);
+  });
+});
+
+app.post('/api/recipes/save', (req, res) => {
+  const userId = req.session.userId;
+  if (!userId) return res.status(401).json({ error: 'לא מחובר' });
+
+  const { recipe_name, recipe_content, category, calories, protein } = req.body;
+
+  db.run(
+    'INSERT INTO saved_recipes (user_id, recipe_name, recipe_content, category, calories, protein) VALUES (?, ?, ?, ?, ?, ?)',
+    [userId, recipe_name, recipe_content, category, calories, protein],
+    function(err) {
+      if (err) res.status(500).json({ error: err.message });
+      else res.json({ id: this.lastID });
+    }
+  );
+});
+
+app.delete('/api/recipes/save/:id', (req, res) => {
+  const userId = req.session.userId;
+  if (!userId) return res.status(401).json({ error: 'לא מחובר' });
+
+  db.run(
+    'DELETE FROM saved_recipes WHERE id = ? AND user_id = ?',
+    [req.params.id, userId],
+    function(err) {
+      if (err) res.status(500).json({ error: err.message });
+      else res.json({ success: true });
+    }
+  );
+});
+
+// ===== SHOPPING LIST =====
+app.get('/api/shopping-list', (req, res) => {
+  const userId = req.session.userId;
+  if (!userId) return res.status(401).json({ error: 'לא מחובר' });
+
+  db.all('SELECT * FROM shopping_list WHERE user_id = ? AND purchased = 0 ORDER BY created_at DESC', [userId], (err, rows) => {
+    if (err) res.status(500).json({ error: err.message });
+    else res.json(rows || []);
+  });
+});
+
+app.post('/api/shopping-list', (req, res) => {
+  const userId = req.session.userId;
+  if (!userId) return res.status(401).json({ error: 'לא מחובר' });
+
+  const { item_name, quantity, reason } = req.body;
+
+  db.run(
+    'INSERT INTO shopping_list (user_id, item_name, quantity, reason) VALUES (?, ?, ?, ?)',
+    [userId, item_name, quantity, reason],
+    function(err) {
+      if (err) res.status(500).json({ error: err.message });
+      else res.json({ id: this.lastID });
+    }
+  );
+});
+
+app.delete('/api/shopping-list/:id', (req, res) => {
+  const userId = req.session.userId;
+  if (!userId) return res.status(401).json({ error: 'לא מחובר' });
+
+  db.run(
+    'DELETE FROM shopping_list WHERE id = ? AND user_id = ?',
+    [req.params.id, userId],
+    function(err) {
+      if (err) res.status(500).json({ error: err.message });
+      else res.json({ success: true });
+    }
+  );
+});
+
+// ===== WORKOUT LOGS =====
+app.get('/api/workouts/:date', (req, res) => {
+  const userId = req.session.userId;
+  if (!userId) return res.status(401).json({ error: 'לא מחובר' });
+
+  const date = req.params.date || new Date().toISOString().split('T')[0];
+
+  db.all(
+    'SELECT * FROM workout_logs WHERE user_id = ? AND date = ? ORDER BY created_at',
+    [userId, date],
+    (err, rows) => {
+      if (err) res.status(500).json({ error: err.message });
+      else res.json(rows || []);
+    }
+  );
+});
+
+app.post('/api/workouts', (req, res) => {
+  const userId = req.session.userId;
+  if (!userId) return res.status(401).json({ error: 'לא מחובר' });
+
+  const { exercise_name, duration, sets, reps, location, difficulty } = req.body;
+
+  db.run(
+    'INSERT INTO workout_logs (user_id, exercise_name, duration, sets, reps, location, difficulty) VALUES (?, ?, ?, ?, ?, ?, ?)',
+    [userId, exercise_name, duration, sets, reps, location, difficulty],
+    function(err) {
+      if (err) res.status(500).json({ error: err.message });
+      else res.json({ id: this.lastID });
+    }
+  );
+});
+
+app.delete('/api/workouts/:id', (req, res) => {
+  const userId = req.session.userId;
+  if (!userId) return res.status(401).json({ error: 'לא מחובר' });
+
+  db.run(
+    'DELETE FROM workout_logs WHERE id = ? AND user_id = ?',
+    [req.params.id, userId],
+    function(err) {
+      if (err) res.status(500).json({ error: err.message });
+      else res.json({ success: true });
+    }
+  );
+});
+
 // Chat endpoint - talk to the chef
 app.post('/api/chat', async (req, res) => {
   const { message, fridgeItems } = req.body;

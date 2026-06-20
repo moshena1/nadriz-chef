@@ -61,6 +61,52 @@ db.serialize(() => {
     )
   `);
 
+  // Create saved_recipes table (favorite recipes)
+  db.run(`
+    CREATE TABLE IF NOT EXISTS saved_recipes (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      recipe_name TEXT NOT NULL,
+      recipe_content TEXT NOT NULL,
+      category TEXT,
+      calories INTEGER,
+      protein REAL,
+      saved_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    )
+  `);
+
+  // Create shopping_list table (items to buy)
+  db.run(`
+    CREATE TABLE IF NOT EXISTS shopping_list (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      item_name TEXT NOT NULL,
+      quantity TEXT,
+      reason TEXT,
+      purchased INTEGER DEFAULT 0,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    )
+  `);
+
+  // Create workout_logs table (fitness tracking)
+  db.run(`
+    CREATE TABLE IF NOT EXISTS workout_logs (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      exercise_name TEXT NOT NULL,
+      duration INTEGER,
+      sets INTEGER,
+      reps INTEGER,
+      location TEXT,
+      difficulty TEXT,
+      date DATE DEFAULT CURRENT_DATE,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    )
+  `);
+
   console.log('✅ Database initialized');
 });
 

@@ -7,124 +7,165 @@
     <style>
         *{margin:0;padding:0;box-sizing:border-box;}
         :root{
-            --green:#4ade80;--orange:#fb923c;--blue:#60a5fa;
+            --green:#4ade80;--orange:#fb923c;--blue:#60a5fa;--red:#ff6b6b;
             --bg:#f8f9fa;--panel:#ffffff;--border:#e5e7eb;
-            --text:#1a1a1a;--dim:#6b7280;
+            --text:#1a1a1a;--dim:#6b7280;--accent:#a78bfa;
         }
         :root[data-theme="dark"]{
-            --bg:#06080f;--panel:rgba(11,17,34,0.88);--border:rgba(255,255,255,0.07);
-            --text:#e2e8f0;--dim:#94a3b8;
+            --bg:#0f172a;--panel:#1e293b;--border:#334155;
+            --text:#e2e8f0;--dim:#94a3b8;--accent:#a78bfa;
         }
         body{
             font-family:'Segoe UI',system-ui,sans-serif;
             background:var(--bg);color:var(--text);
-            min-height:100vh;padding:24px 20px;
-            background-image:radial-gradient(ellipse at 15% 10%,rgba(74,222,128,0.05) 0%,transparent 50%);
+            min-height:100vh;padding:20px;
+            background-image:
+                radial-gradient(ellipse at 20% 50%,rgba(74,222,128,0.08) 0%,transparent 50%),
+                radial-gradient(ellipse at 80% 50%,rgba(96,165,250,0.08) 0%,transparent 50%);
         }
 
-        /* ===== AUTH SCREENS ===== */
+        /* AUTH */
         .auth-screen{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px;}
         .auth-card{
             background:var(--panel);border:1px solid var(--border);
-            border-radius:18px;padding:40px;max-width:400px;width:100%;
-            box-shadow:0 8px 32px rgba(0,0,0,0.15);
+            border-radius:20px;padding:40px;max-width:420px;width:100%;
+            box-shadow:0 20px 60px rgba(0,0,0,0.2);
         }
         .auth-card h1{
-            font-size:2.5em;text-align:center;margin-bottom:8px;
-            background:linear-gradient(90deg,#4ade80 0%,#60a5fa 100%);
-            -webkit-background-clip:text;-webkit-text-fill-color:transparent;
-            background-clip:text;
+            font-size:3em;text-align:center;margin-bottom:10px;
         }
         .auth-card p{text-align:center;color:var(--dim);margin-bottom:30px;}
         .form-group{margin-bottom:16px;}
         .form-group label{display:block;margin-bottom:8px;font-weight:600;font-size:0.9em;color:var(--text);}
         .form-group input,.form-group select{
-            width:100%;padding:11px;background:var(--bg);
-            border:1px solid var(--border);border-radius:10px;color:var(--text);
-            font-family:inherit;font-size:0.95em;transition:border-color 0.2s;
+            width:100%;padding:12px;background:var(--bg);
+            border:2px solid var(--border);border-radius:12px;color:var(--text);
+            font-family:inherit;font-size:0.95em;transition:all 0.3s;
         }
         .form-group input:focus,.form-group select:focus{outline:none;border-color:var(--green);}
         .btn{
-            width:100%;padding:12px;background:linear-gradient(135deg,rgba(74,222,128,.8),rgba(74,222,128,.6));
-            border:none;color:#fff;border-radius:10px;
-            font-weight:700;cursor:pointer;transition:all 0.25s;
-            font-family:inherit;font-size:0.95em;
+            width:100%;padding:13px;background:linear-gradient(135deg,var(--green),#22c55e);
+            border:none;color:#000;border-radius:12px;font-weight:700;cursor:pointer;
+            transition:all 0.3s;font-family:inherit;font-size:0.95em;
         }
-        .btn:hover{opacity:0.9;transform:translateY(-2px);box-shadow:0 8px 24px rgba(74,222,128,.3);}
-        .auth-toggle{text-align:center;margin-top:20px;color:var(--dim);font-size:0.9em;}
+        .btn:hover{transform:translateY(-2px);box-shadow:0 10px 30px rgba(74,222,128,0.3);}
+        .btn.secondary{background:var(--border);color:var(--text);}
+        .btn.secondary:hover{background:var(--dim);color:var(--bg);}
+        .btn.danger{background:#ef4444;}
+        .btn.danger:hover{background:#dc2626;}
+        .auth-toggle{text-align:center;margin-top:20px;color:var(--dim);}
         .auth-toggle a{color:var(--green);cursor:pointer;text-decoration:underline;}
 
-        /* ===== DASHBOARD ===== */
+        /* DASHBOARD */
         .dashboard{display:none;}
         .dashboard.active{display:block;}
-        .container{max-width:1450px;margin:0 auto;}
+        .container{max-width:1600px;margin:0 auto;}
+
         .header{
             display:flex;justify-content:space-between;align-items:center;
-            margin-bottom:30px;flex-wrap:wrap;gap:20px;
+            margin-bottom:30px;flex-wrap:wrap;gap:15px;
         }
-        .header h1{font-size:2em;margin:0;}
-        .header-right{display:flex;gap:12px;align-items:center;}
+        .header h1{font-size:2.2em;margin:0;}
+        .header-right{display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
+        .theme-switcher{display:flex;gap:5px;background:var(--border);padding:5px;border-radius:10px;}
+        .theme-btn{
+            padding:8px 14px;background:transparent;border:none;
+            border-radius:8px;color:var(--text);cursor:pointer;font-weight:600;
+            transition:all 0.2s;font-size:1.1em;
+        }
+        .theme-btn.active{background:var(--green);color:#000;}
         .header-right button{
-            padding:8px 16px;background:var(--border);border:none;
-            border-radius:8px;color:var(--text);cursor:pointer;font-size:0.9em;
-            transition:all 0.2s;font-family:inherit;
+            padding:10px 18px;background:var(--border);border:none;
+            border-radius:10px;color:var(--text);cursor:pointer;font-size:0.9em;
+            transition:all 0.2s;font-family:inherit;font-weight:600;
         }
-        .header-right button:hover{background:rgba(74,222,128,0.2);}
+        .header-right button:hover{background:var(--green);color:#000;}
 
         .panel{
             background:var(--panel);border:1px solid var(--border);
-            border-radius:18px;padding:24px;
-            backdrop-filter:blur(16px);
-            box-shadow:0 8px 32px rgba(0,0,0,0.08);
+            border-radius:16px;padding:24px;
+            box-shadow:0 10px 40px rgba(0,0,0,0.08);
         }
-        .top-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:20px;}
-        .tabs{display:flex;gap:5px;background:var(--border);border-radius:12px;
-            padding:5px;margin-bottom:20px;}
-        .tab-btn{flex:1;padding:10px;background:transparent;border:none;
-            border-radius:8px;color:var(--dim);cursor:pointer;font-weight:600;
-            transition:all 0.2s;font-family:inherit;}
-        .tab-btn.active{background:var(--green);color:#000;}
 
-        .tag{background:rgba(74,222,128,0.15);border:1px solid rgba(74,222,128,0.3);
-            border-radius:20px;padding:6px 12px;font-size:0.85em;color:var(--green);}
+        .tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px;border-bottom:2px solid var(--border);padding-bottom:0;}
+        .tab-btn{
+            padding:12px 20px;background:transparent;border:none;
+            border-bottom:3px solid transparent;color:var(--dim);cursor:pointer;font-weight:600;
+            transition:all 0.2s;font-family:inherit;font-size:0.95em;
+        }
+        .tab-btn.active{color:var(--green);border-bottom-color:var(--green);}
+        .tab-btn:hover{color:var(--text);}
 
-        input[type=text],input[type=number],input[type=date],select,textarea{
-            width:100%;background:var(--bg);border:1px solid var(--border);
+        .tab-content{display:none;}
+        .tab-content.active{display:block;}
+
+        .grid-2{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:20px;margin-bottom:20px;}
+        .grid-3{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:15px;margin-bottom:20px;}
+
+        input[type=text],input[type=number],input[type=date],input[type=password],select,textarea{
+            width:100%;background:var(--bg);border:2px solid var(--border);
             border-radius:10px;color:var(--text);font-size:0.9em;font-family:inherit;
-            padding:10px;margin-bottom:10px;
+            padding:11px;margin-bottom:12px;transition:border-color 0.2s;
         }
-        textarea{min-height:80px;resize:vertical;}
         input:focus,select:focus,textarea:focus{outline:none;border-color:var(--green);}
+        textarea{min-height:100px;resize:vertical;}
 
-        .food-item{
-            background:var(--border);border-radius:10px;padding:12px;
-            margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;
+        .food-item,.recipe-card,.workout-card,.shopping-item{
+            background:var(--border);border-radius:12px;padding:15px;
+            margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;
+            transition:all 0.2s;
         }
-        .food-item-info{flex:1;}
-        .food-item-name{font-weight:600;margin-bottom:4px;}
-        .food-item-stats{font-size:0.85em;color:var(--dim);}
-        .food-item button{
-            background:#ff6b6b;border:none;color:#fff;padding:6px 12px;
-            border-radius:6px;cursor:pointer;font-weight:600;
+        .food-item:hover,.recipe-card:hover,.workout-card:hover,.shopping-item:hover{
+            background:var(--border);transform:translateY(-2px);
         }
-        .food-item button:hover{opacity:0.9;}
+        .item-info{flex:1;}
+        .item-name{font-weight:600;margin-bottom:4px;font-size:1.05em;}
+        .item-stats{font-size:0.85em;color:var(--dim);line-height:1.4;}
+        .item-actions{display:flex;gap:8px;}
+        .item-actions button{
+            padding:7px 13px;border:none;border-radius:8px;cursor:pointer;
+            font-weight:600;transition:all 0.2s;font-size:0.85em;
+        }
+        .btn-small{padding:7px 13px;border:none;border-radius:8px;cursor:pointer;font-weight:600;font-size:0.85em;}
+        .btn-save{background:var(--green);color:#000;}
+        .btn-save:hover{opacity:0.9;}
+        .btn-delete{background:#ff6b6b;color:#fff;}
+        .btn-delete:hover{background:#ff5252;}
+        .btn-edit{background:var(--blue);color:#fff;}
+        .btn-edit:hover{background:#3b82f6;}
 
         .nutrition-summary{
-            display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;
+            display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;
             margin:20px 0;
         }
         .nutrition-card{
             background:var(--border);border-radius:12px;padding:16px;text-align:center;
+            border-left:4px solid var(--green);
         }
-        .nutrition-card h3{font-size:0.9em;color:var(--dim);margin-bottom:8px;}
-        .nutrition-card .value{font-size:1.8em;font-weight:bold;color:var(--green);}
-        .nutrition-card .unit{font-size:0.85em;color:var(--dim);}
+        .nutrition-card h3{font-size:0.85em;color:var(--dim);margin-bottom:8px;text-transform:uppercase;}
+        .nutrition-card .value{font-size:2em;font-weight:bold;color:var(--green);}
+        .nutrition-card .unit{font-size:0.8em;color:var(--dim);}
 
-        .hidden{display:none;}
+        .quiz-container{background:var(--border);border-radius:12px;padding:20px;margin:20px 0;}
+        .quiz-question{margin-bottom:15px;}
+        .quiz-question label{display:flex;align-items:center;padding:10px;cursor:pointer;background:var(--bg);border-radius:10px;margin-bottom:8px;transition:all 0.2s;}
+        .quiz-question label:hover{background:rgba(74,222,128,0.1);}
+        .quiz-question input[type=radio]{margin-left:10px;cursor:pointer;}
+
+        .alert{padding:15px;border-radius:10px;margin-bottom:15px;display:flex;align-items:center;gap:10px;}
+        .alert.success{background:rgba(74,222,128,0.2);color:var(--green);border-left:4px solid var(--green);}
+        .alert.error{background:rgba(255,107,107,0.2);color:#ff6b6b;border-left:4px solid #ff6b6b;}
+        .alert.info{background:rgba(96,165,250,0.2);color:var(--blue);border-left:4px solid var(--blue);}
+
+        .hidden{display:none!important;}
+        .text-center{text-align:center;}
+        .mt-20{margin-top:20px;}
+        .mb-20{margin-bottom:20px;}
+
         @media(max-width:768px){
-            .top-grid{grid-template-columns:1fr;}
+            .grid-2,.grid-3{grid-template-columns:1fr;}
             .header{flex-direction:column;align-items:flex-start;}
-            .header-right{width:100%;flex-wrap:wrap;}
+            .tabs{justify-content:flex-start;overflow-x:auto;}
         }
     </style>
 </head>
@@ -146,8 +187,8 @@
                 <input type="password" id="loginPassword" placeholder="סיסמה">
             </div>
             <button class="btn" onclick="login()">כניסה</button>
-            <div class="auth-toggle">
-                עדיין אין לך חשבון? <a onclick="toggleAuthForm()">הירשם עכשיו</a>
+            <div class="auth-toggle" style="margin-top:20px;">
+                אין לך חשבון? <a onclick="toggleAuthForm()">הירשם כאן</a>
             </div>
         </div>
 
@@ -161,7 +202,7 @@
                 <input type="password" id="signupPassword" placeholder="סיסמה חזקה">
             </div>
             <button class="btn" onclick="signup()">הרשמה</button>
-            <div class="auth-toggle">
+            <div class="auth-toggle" style="margin-top:20px;">
                 כבר יש לך חשבון? <a onclick="toggleAuthForm()">כנס כאן</a>
             </div>
         </div>
@@ -172,147 +213,182 @@
 <div class="dashboard" id="dashboard">
     <div class="container">
         <div class="header">
-            <h1>🧑‍🍳 מטבח חכם - <span id="username"></span></h1>
+            <div>
+                <h1>🧑‍🍳 NADRIZ CHEF</h1>
+                <p style="color:var(--dim);margin-top:5px;">שלום, <span id="username"></span>!</p>
+            </div>
             <div class="header-right">
-                <button onclick="toggleTheme()">🌙 תיאור</button>
-                <button onclick="toggleAccessibility()">♿</button>
-                <button onclick="logout()" style="background:#ff6b6b;">🚪 יציאה</button>
+                <div class="theme-switcher">
+                    <button class="theme-btn active" onclick="setTheme('light')" title="בהיר">☀️</button>
+                    <button class="theme-btn" onclick="setTheme('dark')" title="כהה">🌙</button>
+                </div>
+                <button onclick="toggleAccessibility()">♿ נגישות</button>
+                <button onclick="logout()" class="btn danger" style="width:auto;margin:0;">🚪 יציאה</button>
             </div>
         </div>
 
-        <!-- TABS -->
+        <!-- MAIN PANEL -->
         <div class="panel">
             <div class="tabs">
-                <button class="tab-btn active" onclick="switchTab('fridge')">🧊 המקרר שלי</button>
+                <button class="tab-btn active" onclick="switchTab('fridge')">🧊 המקרר</button>
                 <button class="tab-btn" onclick="switchTab('recipes')">📖 מתכונים</button>
-                <button class="tab-btn" onclick="switchTab('nutrition')">🥗 תזונה</button>
-                <button class="tab-btn" onclick="switchTab('chat')">💬 שיחה</button>
+                <button class="tab-btn" onclick="switchTab('nutrition')">🥗 תזונה וכושר</button>
+                <button class="tab-btn" onclick="switchTab('saved')">❤️ שמורים</button>
+                <button class="tab-btn" onclick="switchTab('shopping')">🛒 חוסרים</button>
             </div>
 
             <!-- FRIDGE TAB -->
-            <div id="fridgeTab" class="tab-content">
-                <div class="top-grid">
+            <div id="fridgeTab" class="tab-content active">
+                <h2>🧊 המוצרים שלי</h2>
+                <div class="grid-2">
                     <div>
-                        <h2>הוסף מוצר</h2>
-                        <input type="text" id="itemName" placeholder="שם המוצר">
+                        <h3>➕ הוסף מוצר</h3>
+                        <input type="text" id="itemName" placeholder="שם המוצר" autofocus>
                         <input type="text" id="itemQuantity" placeholder="כמות (אופציונלי)">
-                        <button class="btn" onclick="addItem()" style="margin-top:10px;">➕ הוסף</button>
+                        <button class="btn" onclick="addItem()">הוסף למקרר</button>
                     </div>
                     <div>
-                        <h2>📸 העלה קבלה</h2>
+                        <h3>📸 העלה קבלה</h3>
                         <input type="text" id="receiptUrl" placeholder="הדבק קישור לקבלה">
-                        <button class="btn" onclick="fetchReceipt()" style="margin-top:10px;">🔍 חלץ מוצרים</button>
+                        <button class="btn" onclick="fetchReceipt()">חלץ מוצרים</button>
                     </div>
                 </div>
-
-                <h2 style="margin-top:20px;">המוצרים שלי</h2>
                 <div id="fridgeList"></div>
             </div>
 
             <!-- RECIPES TAB -->
-            <div id="recipesTab" class="tab-content hidden">
-                <div class="top-grid">
-                    <div>
-                        <h2>🎲 משחקון מסתרי</h2>
-                        <p style="color:var(--dim);margin-bottom:15px;">בואו נעשה משהו משעשע!</p>
-                        <button class="btn" onclick="playMysteryGame()">🎮 התחל משחק</button>
+            <div id="recipesTab" class="tab-content">
+                <h2>📖 מתכונים</h2>
+
+                <div style="background:var(--border);border-radius:12px;padding:20px;margin-bottom:20px;">
+                    <h3>🎯 שאלון קצר - בואו נמצא מתכון!</h3>
+                    <div class="quiz-container">
+                        <div class="quiz-question">
+                            <label><input type="radio" name="mealType" value="food"> 🍗 אוכל</label>
+                            <label><input type="radio" name="mealType" value="dessert"> 🍰 קינוח</label>
+                        </div>
+                        <div class="quiz-question">
+                            <label><input type="radio" name="difficulty" value="קל"> קל (עד 20 דק')</label>
+                            <label><input type="radio" name="difficulty" value="בינוני"> בינוני (20-40 דק')</label>
+                            <label><input type="radio" name="difficulty" value="קשה"> קשה (40+ דק')</label>
+                        </div>
+                        <button class="btn" onclick="getRecipeQuiz()">🤖 קבל המלצה!</button>
                     </div>
-                    <div id="gameOutput" style="padding:15px;background:var(--border);border-radius:12px;"></div>
                 </div>
 
-                <h2 style="margin-top:20px;">מתכוני AI</h2>
-                <input type="text" id="recipeSearch" placeholder="חפש מתכון (למשל: עוגיות שוקולד)">
-                <button class="btn" onclick="searchRecipe()" style="margin-top:10px;margin-bottom:20px;">🔍 חפש</button>
+                <h3>או חפש בעצמך:</h3>
+                <div style="display:grid;grid-template-columns:1fr auto;gap:10px;margin-bottom:20px;">
+                    <input type="text" id="recipeSearch" placeholder="למשל: עוגיות שוקולד">
+                    <button class="btn" onclick="searchRecipe()" style="width:auto;">🔍 חפש</button>
+                </div>
+
                 <div id="recipeOutput"></div>
             </div>
 
-            <!-- NUTRITION TAB -->
-            <div id="nutritionTab" class="tab-content hidden">
-                <h2>📊 הפרופיל התזונתי שלי</h2>
-                <div style="background:var(--border);border-radius:12px;padding:20px;margin-bottom:20px;">
-                    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:15px;">
-                        <div>
-                            <label>גיל</label>
-                            <input type="number" id="userAge" placeholder="25">
-                        </div>
-                        <div>
-                            <label>גובה (ס"מ)</label>
-                            <input type="number" id="userHeight" placeholder="180">
-                        </div>
-                        <div>
-                            <label>משקל עכשוו (ק"ג)</label>
-                            <input type="number" id="currentWeight" placeholder="75">
-                        </div>
-                        <div>
-                            <label>משקל יעד (ק"ג)</label>
-                            <input type="number" id="targetWeight" placeholder="70">
-                        </div>
-                        <div>
-                            <label>רמת פעילות</label>
-                            <select id="activityLevel">
-                                <option>נמוכה</option>
-                                <option>בינונית</option>
-                                <option selected>גבוהה</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label>יעד</label>
-                            <select id="goal">
-                                <option>ירידה במשקל</option>
-                                <option>שמירה על משקל</option>
-                                <option selected>עלייה במשקל</option>
-                            </select>
-                        </div>
+            <!-- NUTRITION & FITNESS TAB -->
+            <div id="nutritionTab" class="tab-content">
+                <h2>🥗 תזונה וכושר</h2>
+
+                <div class="grid-2">
+                    <!-- NUTRITION PROFILE -->
+                    <div>
+                        <h3>📊 הפרופיל שלי</h3>
+                        <input type="number" id="userAge" placeholder="גיל" style="margin-bottom:10px;">
+                        <input type="number" id="userHeight" placeholder="גובה (ס"מ)" style="margin-bottom:10px;">
+                        <input type="number" id="currentWeight" placeholder="משקל עכשוו (ק"ג)" style="margin-bottom:10px;">
+                        <input type="number" id="targetWeight" placeholder="משקל יעד (ק"ג)" style="margin-bottom:10px;">
+                        <select id="activityLevel" style="margin-bottom:10px;">
+                            <option>בחר רמת פעילות</option>
+                            <option>נמוכה</option>
+                            <option>בינונית</option>
+                            <option>גבוהה</option>
+                        </select>
+                        <select id="goal" style="margin-bottom:10px;">
+                            <option>בחר יעד</option>
+                            <option>ירידה במשקל</option>
+                            <option>שמירה על משקל</option>
+                            <option>עלייה במשקל</option>
+                        </select>
+                        <input type="text" id="dietaryPrefs" placeholder="העדפות (ללא גלוטן, ווגן וכו')" style="margin-bottom:10px;">
+                        <button class="btn" onclick="saveNutritionProfile()">💾 שמור</button>
                     </div>
-                    <div style="margin-top:15px;">
-                        <label>העדפות תזונתיות (כולל אלרגיות)</label>
-                        <input type="text" id="dietaryPrefs" placeholder="למשל: ווגן, ללא גלוטן, אלרגי לבוטנים">
+
+                    <!-- FITNESS TRAINER -->
+                    <div>
+                        <h3>💪 מאמן כושר</h3>
+                        <input type="text" id="exerciseName" placeholder="שם התרגיל" style="margin-bottom:10px;">
+                        <input type="number" id="duration" placeholder="משך (דקות)" style="margin-bottom:10px;">
+                        <input type="number" id="sets" placeholder="סטים" style="margin-bottom:10px;">
+                        <input type="number" id="reps" placeholder="חזרות" style="margin-bottom:10px;">
+                        <select id="location" style="margin-bottom:10px;">
+                            <option>בחר מיקום</option>
+                            <option>בית</option>
+                            <option>מכון</option>
+                        </select>
+                        <select id="difficulty" style="margin-bottom:10px;">
+                            <option>קל</option>
+                            <option>בינוני</option>
+                            <option>קשה</option>
+                        </select>
+                        <button class="btn" onclick="addWorkout()">➕ הוסף תרגיל</button>
                     </div>
-                    <button class="btn" onclick="saveNutritionProfile()" style="margin-top:15px;">💾 שמור פרופיל</button>
                 </div>
 
-                <h2>🍽️ קלוט מזון - היום</h2>
-                <div style="background:var(--border);border-radius:12px;padding:20px;margin-bottom:20px;">
-                    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:15px;">
+                <!-- DAILY TRACKING -->
+                <h3>🍽️ קלוט מזון - היום</h3>
+                <div style="background:var(--border);border-radius:12px;padding:15px;margin-bottom:20px;">
+                    <div class="grid-2">
                         <div>
-                            <label>שם המזון</label>
-                            <input type="text" id="foodName" placeholder="למשל: עוף צלוי עם אורז">
-                        </div>
-                        <div>
-                            <label>כמות</label>
-                            <input type="text" id="foodQuantity" placeholder="200 גרם">
-                        </div>
-                        <div>
-                            <label>סוג ארוחה</label>
+                            <input type="text" id="foodName" placeholder="שם המזון">
+                            <input type="text" id="foodQuantity" placeholder="כמות">
                             <select id="mealType">
                                 <option>ארוחת בוקר</option>
                                 <option>חטיף</option>
                                 <option selected>ארוחת צהריים</option>
-                                <option>חטיף</option>
                                 <option>ארוחת ערב</option>
                             </select>
                         </div>
+                        <div style="display:flex;flex-direction:column;justify-content:flex-end;">
+                            <button class="btn" onclick="addFood()">➕ הוסף</button>
+                        </div>
                     </div>
-                    <button class="btn" onclick="addFood()" style="margin-top:15px;">➕ הוסף למעקב</button>
                 </div>
 
-                <h2>📈 קלוריות והערכים התזונתיים של היום</h2>
+                <!-- NUTRITION SUMMARY -->
+                <h3>📈 סיכום התזונה של היום</h3>
                 <div id="nutritionSummary" class="nutrition-summary"></div>
 
-                <h2 style="margin-top:20px;">🍖 המזונות שלי היום</h2>
+                <h3 style="margin-top:30px;">🍖 האוכל שלי היום</h3>
                 <div id="foodLog"></div>
 
-                <h2 style="margin-top:20px;">💡 המלצות תזונתיות</h2>
-                <button class="btn" onclick="getNutritionRecommendation()" style="margin-bottom:20px;">🤖 קבל המלצות מ-AI</button>
+                <h3 style="margin-top:30px;">💡 המלצות מאישי</h3>
+                <button class="btn" onclick="getNutritionRecommendation()" style="margin-bottom:20px;">🤖 קבל המלצות</button>
                 <div id="nutritionRecommendation"></div>
+
+                <h3 style="margin-top:30px;">🏋️ התרגילים שלי היום</h3>
+                <div id="workoutLog"></div>
             </div>
 
-            <!-- CHAT TAB -->
-            <div id="chatTab" class="tab-content hidden">
-                <h2>💬 שיחה עם השף</h2>
-                <div style="background:var(--border);border-radius:12px;padding:15px;min-height:250px;margin-bottom:20px;overflow-y:auto;max-height:300px;" id="chatBox"></div>
-                <input type="text" id="chatInput" placeholder="שאל משהו (מתכון, עצות בישול...)" onkeypress="if(event.key==='Enter') sendChat()">
-                <button class="btn" onclick="sendChat()" style="margin-top:10px;">📤 שלח</button>
+            <!-- SAVED RECIPES TAB -->
+            <div id="savedTab" class="tab-content">
+                <h2>❤️ המתכונים השמורים שלי</h2>
+                <div id="savedRecipesList"></div>
+            </div>
+
+            <!-- SHOPPING LIST TAB -->
+            <div id="shoppingTab" class="tab-content">
+                <h2>🛒 רשימת חוסרים</h2>
+                <p style="color:var(--dim);margin-bottom:20px;">כשמסירים משהו מהמקרר, הוא מופיע כאן</p>
+
+                <div style="background:var(--border);border-radius:12px;padding:15px;margin-bottom:20px;">
+                    <h3>➕ הוסף פריט</h3>
+                    <input type="text" id="shoppingItem" placeholder="שם המוצר" style="margin-bottom:10px;">
+                    <input type="text" id="shoppingQuantity" placeholder="כמות" style="margin-bottom:10px;">
+                    <input type="text" id="shoppingReason" placeholder="סיבה (אופציונלי)" style="margin-bottom:10px;">
+                    <button class="btn" onclick="addShoppingItem()">הוסף לרשימה</button>
+                </div>
+
+                <div id="shoppingList"></div>
             </div>
         </div>
     </div>
@@ -320,6 +396,29 @@
 
 <script>
 const API = 'http://localhost:3000';
+
+// THEME
+function setTheme(t){
+    document.documentElement.setAttribute('data-theme',t);
+    document.querySelectorAll('.theme-btn').forEach(b=>b.classList.remove('active'));
+    event.target.classList.add('active');
+    localStorage.setItem('theme',t);
+}
+
+function toggleAccessibility(){
+    const s=document.body.style.fontSize;
+    if(s==='20px'){
+        document.body.style.fontSize='16px';
+        document.documentElement.style.letterSpacing='normal';
+        localStorage.removeItem('a11y');
+        alert('✅ מצב רגיל');
+    }else{
+        document.body.style.fontSize='20px';
+        document.documentElement.style.letterSpacing='1px';
+        localStorage.setItem('a11y','1');
+        alert('✅ מצב נגישות - טקסט גדול יותר וטוב יותר');
+    }
+}
 
 // AUTH
 async function signup(){
@@ -330,6 +429,7 @@ async function signup(){
     const d=await r.json();
     if(!r.ok) return alert(d.error);
     localStorage.setItem('userId',d.id);
+    localStorage.setItem('username',u);
     location.reload();
 }
 
@@ -357,35 +457,16 @@ function toggleAuthForm(){
     document.getElementById('authTitle').textContent=document.getElementById('loginForm').classList.contains('hidden')?'הרשמה':'כניסה';
 }
 
-function toggleTheme(){
-    const t=document.documentElement.getAttribute('data-theme');
-    document.documentElement.setAttribute('data-theme',t==='dark'?'light':'dark');
-    localStorage.setItem('theme',t==='dark'?'light':'dark');
-}
-
-function toggleAccessibility(){
-    const m=document.body.style.fontSize;
-    if(m==='18px'){
-        document.body.style.fontSize='16px';
-        localStorage.removeItem('accessibilityMode');
-        alert('מצב הנגישות כבוי');
-    }else{
-        document.body.style.fontSize='18px';
-        localStorage.setItem('accessibilityMode','true');
-        alert('מצב הנגישות פעיל - הטקסט גדול וקל יותר לקריאה');
-    }
-}
-
 function switchTab(t){
-    document.querySelectorAll('.tab-content').forEach(e=>e.classList.add('hidden'));
+    document.querySelectorAll('.tab-content').forEach(e=>e.classList.remove('active'));
     document.querySelectorAll('.tab-btn').forEach(e=>e.classList.remove('active'));
-    document.getElementById(t+'Tab').classList.remove('hidden');
+    document.getElementById(t+'Tab').classList.add('active');
     event.target.classList.add('active');
 }
 
 // FRIDGE
 async function addItem(){
-    const n=document.getElementById('itemName').value;
+    const n=document.getElementById('itemName').value.trim();
     if(!n) return alert('הכנס שם מוצר');
     const q=document.getElementById('itemQuantity').value;
     const r=await fetch(`${API}/api/fridge`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({item_name:n,quantity:q})});
@@ -399,24 +480,27 @@ async function loadFridge(){
     const r=await fetch(`${API}/api/fridge`);
     const items=await r.json();
     const l=document.getElementById('fridgeList');
-    l.innerHTML=items.map(i=>`<div class="food-item">
-        <div class="food-item-info">
-            <div class="food-item-name">${i.item_name}</div>
-            <div class="food-item-stats">${i.quantity||'כמות לא מוגדרת'}</div>
+    l.innerHTML=items.length?items.map(i=>`<div class="food-item">
+        <div class="item-info">
+            <div class="item-name">${i.item_name}</div>
+            <div class="item-stats">${i.quantity||'כמות לא מוגדרת'}</div>
         </div>
-        <button onclick="deleteItem(${i.id})">🗑️</button>
-    </div>`).join('');
+        <div class="item-actions">
+            <button class="btn-delete btn-small" onclick="deleteFridgeItem(${i.id})">🗑️</button>
+        </div>
+    </div>`).join(''):'<p style="color:var(--dim);text-align:center;padding:30px;">המקרר ריק 🧊</p>';
 }
 
-async function deleteItem(id){
+async function deleteFridgeItem(id){
     const r=await fetch(`${API}/api/fridge/${id}`,{method:'DELETE'});
     if(!r.ok) return alert('שגיאה');
+    await addShoppingItem('מוצר מהמקרר','','הוסר מהמקרר');
     loadFridge();
 }
 
 async function fetchReceipt(){
     const url=document.getElementById('receiptUrl').value;
-    if(!url) return alert('הכנס קישור לקבלה');
+    if(!url) return alert('הכנס קישור');
     const r=await fetch(`${API}/api/fetch-receipt`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url})});
     const d=await r.json();
     if(!r.ok) return alert(d.error);
@@ -429,83 +513,113 @@ async function fetchReceipt(){
             alert('✅ המוצרים נוספו!');
             loadFridge();
         }catch(e){
-            alert('שגיאה בעיבוד הנתונים');
+            alert('שגיאה בעיבוד');
         }
     }
+}
+
+// RECIPES
+async function getRecipeQuiz(){
+    const type=document.querySelector('input[name="mealType"]:checked')?.value;
+    const diff=document.querySelector('input[name="difficulty"]:checked')?.value;
+    if(!type||!diff) return alert('בחר שתיים');
+
+    const category=type==='food'?'אוכל':'קינוח';
+    const r=await fetch(`${API}/api/claude`,{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({
+            model:'claude-haiku-4-5-20251001',
+            max_tokens:500,
+            messages:[{role:'user',content:`תן מתכון ${category} ${diff} בעברית (3 שלבים בלבד). תחזור: שם, תכן קצר.`}]
+        })
+    });
+    const d=await r.json();
+    document.getElementById('recipeOutput').innerHTML=`<div style="background:var(--border);border-radius:12px;padding:20px;white-space:pre-wrap;">${d.content[0].text}</div>`;
+}
+
+async function searchRecipe(){
+    const q=document.getElementById('recipeSearch').value.trim();
+    if(!q) return alert('הכנס שם מתכון');
+    const r=await fetch(`${API}/api/claude`,{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({
+            model:'claude-haiku-4-5-20251001',
+            max_tokens:600,
+            messages:[{role:'user',content:`תן מתכון עבור: ${q} בעברית (4 שלבים). ציין קלוריות משוערות.`}]
+        })
+    });
+    const d=await r.json();
+    document.getElementById('recipeOutput').innerHTML=`<div class="recipe-card" style="padding:20px;background:var(--border);border-radius:12px;flex-direction:column;"><div style="white-space:pre-wrap;margin-bottom:15px;">${d.content[0].text}</div><button class="btn-save btn-small" onclick="saveRecipe('${q}','${d.content[0].text}')">❤️ שמור</button></div>`;
+}
+
+async function saveRecipe(name,content){
+    const r=await fetch(`${API}/api/recipes/save`,{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({recipe_name:name,recipe_content:content,category:'מתכון'})
+    });
+    if(!r.ok) return alert('שגיאה');
+    alert('✅ המתכון נשמר!');
+    loadSavedRecipes();
 }
 
 // NUTRITION
 async function saveNutritionProfile(){
     const age=parseInt(document.getElementById('userAge').value);
     const height=parseInt(document.getElementById('userHeight').value);
-    const current_weight=parseFloat(document.getElementById('currentWeight').value);
-    const target_weight=parseFloat(document.getElementById('targetWeight').value);
-    const activity_level=document.getElementById('activityLevel').value;
-    const goal=document.getElementById('goal').value;
-    const dietary_preferences=document.getElementById('dietaryPrefs').value;
-
-    const r=await fetch(`${API}/api/nutrition/profile`,{
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({age,height,current_weight,target_weight,activity_level,goal,dietary_preferences})
-    });
-    if(!r.ok) return alert('שגיאה בשמירת הפרופיל');
-    alert('✅ הפרופיל שמור');
+    const cw=parseFloat(document.getElementById('currentWeight').value);
+    const tw=parseFloat(document.getElementById('targetWeight').value);
+    const al=document.getElementById('activityLevel').value;
+    const g=document.getElementById('goal').value;
+    const dp=document.getElementById('dietaryPrefs').value;
+    if(!age||!height||!cw||!tw||!al||!g) return alert('כמלא את כל השדות');
+    const r=await fetch(`${API}/api/nutrition/profile`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({age,height,current_weight:cw,target_weight:tw,activity_level:al,goal:g,dietary_preferences:dp})});
+    if(!r.ok) return alert('שגיאה');
+    alert('✅ הפרופיל נשמר!');
 }
 
 async function addFood(){
-    const name=document.getElementById('foodName').value;
-    if(!name) return alert('הכנס שם מזון');
-    const quantity=document.getElementById('foodQuantity').value;
-    const meal_type=document.getElementById('mealType').value;
-
+    const n=document.getElementById('foodName').value.trim();
+    if(!n) return alert('הכנס שם מזון');
+    const q=document.getElementById('foodQuantity').value;
+    const mt=document.getElementById('mealType').value;
     const r=await fetch(`${API}/api/claude`,{
         method:'POST',
         headers:{'Content-Type':'application/json'},
         body:JSON.stringify({
             model:'claude-haiku-4-5-20251001',
-            max_tokens:300,
-            messages:[{
-                role:'user',
-                content:`חשב ערכים תזונתיים עבור: ${name} (${quantity}).
-                החזר ONLY JSON (בלי markdown):
-                {"calories":XXX,"protein":X,"carbs":X,"fat":X}`
-            }]
+            max_tokens:200,
+            messages:[{role:'user',content:`חשב קלוריות וערכים ל: ${n} (${q}). החזר JSON בלבד:\n{"calories":X,"protein":X,"carbs":X,"fat":X}`}]
         })
     });
     const d=await r.json();
     try{
-        const text=d.content[0].text.replace(/```json|```/g,'').trim();
-        const nutrients=JSON.parse(text);
-
-        const fr=await fetch(`${API}/api/food-log`,{
-            method:'POST',
-            headers:{'Content-Type':'application/json'},
-            body:JSON.stringify({food_name:name,quantity,meal_type,...nutrients})
-        });
-        if(!fr.ok) throw new Error('שגיאה בהוספה');
-
+        const txt=d.content[0].text.replace(/```json|```/g,'').trim();
+        const nut=JSON.parse(txt);
+        const fr=await fetch(`${API}/api/food-log`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({food_name:n,quantity:q,meal_type:mt,...nut})});
+        if(!fr.ok) throw new Error();
         document.getElementById('foodName').value='';
         document.getElementById('foodQuantity').value='';
         loadFoodLog();
         loadNutritionSummary();
     }catch(e){
-        alert('שגיאה בחישוב הערכים');
+        alert('שגיאה בחישוב');
     }
 }
 
 async function loadFoodLog(){
-    const today=new Date().toISOString().split('T')[0];
-    const r=await fetch(`${API}/api/food-log/${today}`);
+    const d=new Date().toISOString().split('T')[0];
+    const r=await fetch(`${API}/api/food-log/${d}`);
     const items=await r.json();
-    const l=document.getElementById('foodLog');
-    l.innerHTML=items.map(i=>`<div class="food-item">
-        <div class="food-item-info">
-            <div class="food-item-name">${i.food_name}</div>
-            <div class="food-item-stats">${i.meal_type} | ${i.calories} קלוריות | חלבון: ${i.protein}ג</div>
+    document.getElementById('foodLog').innerHTML=items.length?items.map(i=>`<div class="food-item">
+        <div class="item-info">
+            <div class="item-name">${i.food_name}</div>
+            <div class="item-stats">${i.meal_type} | ${i.calories} קק"ל | חלבון: ${i.protein}ג | פחמימות: ${i.carbs}ג | שומנים: ${i.fat}ג</div>
         </div>
-        <button onclick="deleteFood(${i.id})">🗑️</button>
-    </div>`).join('');
+        <button class="btn-delete btn-small" onclick="deleteFood(${i.id})">🗑️</button>
+    </div>`).join(''):'<p style="color:var(--dim);text-align:center;padding:20px;">עדיין לא הוספת מזון</p>';
 }
 
 async function deleteFood(id){
@@ -516,145 +630,153 @@ async function deleteFood(id){
 }
 
 async function loadNutritionSummary(){
-    const today=new Date().toISOString().split('T')[0];
-    const r=await fetch(`${API}/api/food-log/${today}`);
+    const d=new Date().toISOString().split('T')[0];
+    const r=await fetch(`${API}/api/food-log/${d}`);
     const items=await r.json();
-    const totals={calories:0,protein:0,carbs:0,fat:0};
-    items.forEach(i=>{
-        totals.calories+=i.calories||0;
-        totals.protein+=i.protein||0;
-        totals.carbs+=i.carbs||0;
-        totals.fat+=i.fat||0;
-    });
+    const t={calories:0,protein:0,carbs:0,fat:0};
+    items.forEach(i=>{t.calories+=i.calories||0;t.protein+=i.protein||0;t.carbs+=i.carbs||0;t.fat+=i.fat||0;});
     document.getElementById('nutritionSummary').innerHTML=`
         <div class="nutrition-card">
             <h3>קלוריות</h3>
-            <div class="value">${totals.calories}</div>
+            <div class="value">${t.calories}</div>
             <div class="unit">קק"ל</div>
         </div>
         <div class="nutrition-card">
             <h3>חלבון</h3>
-            <div class="value">${totals.protein.toFixed(1)}</div>
-            <div class="unit">גרמים</div>
+            <div class="value">${t.protein.toFixed(1)}</div>
+            <div class="unit">ג</div>
         </div>
         <div class="nutrition-card">
             <h3>פחמימות</h3>
-            <div class="value">${totals.carbs.toFixed(1)}</div>
-            <div class="unit">גרמים</div>
+            <div class="value">${t.carbs.toFixed(1)}</div>
+            <div class="unit">ג</div>
         </div>
         <div class="nutrition-card">
             <h3>שומנים</h3>
-            <div class="value">${totals.fat.toFixed(1)}</div>
-            <div class="unit">גרמים</div>
+            <div class="value">${t.fat.toFixed(1)}</div>
+            <div class="unit">ג</div>
         </div>
     `;
 }
 
 async function getNutritionRecommendation(){
     const pr=await fetch(`${API}/api/nutrition/profile`);
-    const profile=await pr.json();
-    const fr=await fetch(`${API}/api/food-log/${new Date().toISOString().split('T')[0]}`);
+    const prof=await pr.json();
+    const d=new Date().toISOString().split('T')[0];
+    const fr=await fetch(`${API}/api/food-log/${d}`);
     const foods=await fr.json();
-
-    const foodList=foods.map(f=>`${f.food_name} (${f.calories} קק"ל)`).join(', ') || 'לא הוספו מזונות';
-
-    const r=await fetch(`${API}/api/claude`,{
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({
-            model:'claude-haiku-4-5-20251001',
-            max_tokens:600,
-            messages:[{
-                role:'user',
-                content:`אתה דיאטיסיין מומחה. הפרופיל של המשתמש:
-                גיל: ${profile.age}, גובה: ${profile.height}ס"מ, משקל עכשוו: ${profile.current_weight}ק"ג, משקל יעד: ${profile.target_weight}ק"ג
-                רמת פעילות: ${profile.activity_level}, יעד: ${profile.goal}
-                העדפות: ${profile.dietary_preferences}
-
-                מזונות של היום: ${foodList}
-
-                תן המלצות מותאמות לאישיות זו בעברית (2-3 משפטים קצרים בלבד).`
-            }]
-        })
-    });
-    const d=await r.json();
-    document.getElementById('nutritionRecommendation').innerHTML=`<div style="background:var(--border);border-radius:12px;padding:15px;">${d.content[0].text}</div>`;
-}
-
-// RECIPES
-async function playMysteryGame(){
-    const r=await fetch(`${API}/api/fridge`);
-    const items=await r.json();
-    const fridgeList=items.map(i=>i.item_name).join(', ') || 'פומלה, חלמון, חלב';
-
-    const gameRes=await fetch(`${API}/api/claude`,{
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({
-            model:'claude-haiku-4-5-20251001',
-            max_tokens:400,
-            messages:[{
-                role:'user',
-                content:`יצור משחקון재미있는! המשתמש יש במקרר: ${fridgeList}.
-
-                תן לו: 1) משהו לבחור (בחר בן מקרר), 2) תגידו לו מה לעשות איתו בעברית (קצר וחמוד).`
-            }]
-        })
-    });
-    const d=await gameRes.json();
-    document.getElementById('gameOutput').innerHTML=d.content[0].text;
-}
-
-async function searchRecipe(){
-    const q=document.getElementById('recipeSearch').value;
-    if(!q) return alert('הכנס שם מתכון');
-
+    const fl=foods.map(f=>`${f.food_name} (${f.calories} קק"ל)`).join(', ')||'לא';
     const r=await fetch(`${API}/api/claude`,{
         method:'POST',
         headers:{'Content-Type':'application/json'},
         body:JSON.stringify({
             model:'claude-haiku-4-5-20251001',
             max_tokens:500,
-            messages:[{
-                role:'user',
-                content:`תן מתכון קצר וקל ל${q} בעברית (3-4 שלבים בלבד).`
-            }]
+            messages:[{role:'user',content:`אתה דיאטיסיין. גיל: ${prof.age}, גובה: ${prof.height}ס"מ, משקל: ${prof.current_weight} → ${prof.target_weight}ק"ג. יעד: ${prof.goal}. מזון היום: ${fl}. תן 3 עצות קצרות בעברית.`}]
         })
     });
-    const d=await r.json();
-    document.getElementById('recipeOutput').innerHTML=`<div style="background:var(--border);border-radius:12px;padding:15px;white-space:pre-wrap;">${d.content[0].text}</div>`;
+    const rec=await r.json();
+    document.getElementById('nutritionRecommendation').innerHTML=`<div style="background:var(--border);border-radius:12px;padding:20px;white-space:pre-wrap;">${rec.content[0].text}</div>`;
 }
 
-// CHAT
-async function sendChat(){
-    const msg=document.getElementById('chatInput').value;
-    if(!msg) return;
+async function addWorkout(){
+    const en=document.getElementById('exerciseName').value.trim();
+    if(!en) return alert('הכנס שם תרגיל');
+    const du=parseInt(document.getElementById('duration').value);
+    const se=parseInt(document.getElementById('sets').value);
+    const re=parseInt(document.getElementById('reps').value);
+    const lo=document.getElementById('location').value;
+    const di=document.getElementById('difficulty').value;
+    const r=await fetch(`${API}/api/workouts`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({exercise_name:en,duration:du,sets:se,reps:re,location:lo,difficulty:di})});
+    if(!r.ok) return alert('שגיאה');
+    document.getElementById('exerciseName').value='';
+    document.getElementById('duration').value='';
+    document.getElementById('sets').value='';
+    document.getElementById('reps').value='';
+    loadWorkoutLog();
+}
 
-    const box=document.getElementById('chatBox');
-    box.innerHTML+=`<div style="margin-bottom:10px;color:var(--green);"><strong>👤 אתה:</strong> ${msg}</div>`;
-    document.getElementById('chatInput').value='';
-
-    const r=await fetch(`${API}/api/fridge`);
+async function loadWorkoutLog(){
+    const d=new Date().toISOString().split('T')[0];
+    const r=await fetch(`${API}/api/workouts/${d}`);
     const items=await r.json();
-    const fridgeList=items.map(i=>i.item_name).join(', ') || 'מקרר ריק';
+    document.getElementById('workoutLog').innerHTML=items.length?items.map(i=>`<div class="workout-card">
+        <div class="item-info">
+            <div class="item-name">${i.exercise_name}</div>
+            <div class="item-stats">${i.duration} דק' | ${i.sets} סטים × ${i.reps} חזרות | ${i.location} | ${i.difficulty}</div>
+        </div>
+        <button class="btn-delete btn-small" onclick="deleteWorkout(${i.id})">🗑️</button>
+    </div>`).join(''):'<p style="color:var(--dim);text-align:center;padding:20px;">עדיין לא הוספת תרגילים היום</p>';
+}
 
-    const chatRes=await fetch(`${API}/api/chat`,{
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({message:msg,fridgeItems:fridgeList.split(', ')})
-    });
-    const d=await chatRes.json();
-    box.innerHTML+=`<div style="margin-bottom:10px;color:var(--blue);"><strong>🧑‍🍳 השף:</strong> ${d.content[0].text}</div>`;
-    box.scrollTop=box.scrollHeight;
+async function deleteWorkout(id){
+    const r=await fetch(`${API}/api/workouts/${id}`,{method:'DELETE'});
+    if(!r.ok) return alert('שגיאה');
+    loadWorkoutLog();
+}
+
+// SAVED RECIPES
+async function loadSavedRecipes(){
+    const r=await fetch(`${API}/api/recipes/saved`);
+    const recipes=await r.json();
+    document.getElementById('savedRecipesList').innerHTML=recipes.length?recipes.map(rec=>`<div class="recipe-card">
+        <div class="item-info">
+            <div class="item-name">${rec.recipe_name}</div>
+            <div class="item-stats" style="white-space:pre-wrap;max-height:100px;overflow:hidden;">${rec.recipe_content.substring(0,150)}...</div>
+        </div>
+        <div class="item-actions">
+            <button class="btn-delete btn-small" onclick="deleteRecipe(${rec.id})">🗑️</button>
+        </div>
+    </div>`).join(''):'<p style="color:var(--dim);text-align:center;padding:30px;">אין מתכונים שמורים עדיין ❤️</p>';
+}
+
+async function deleteRecipe(id){
+    const r=await fetch(`${API}/api/recipes/save/${id}`,{method:'DELETE'});
+    if(!r.ok) return alert('שגיאה');
+    loadSavedRecipes();
+}
+
+// SHOPPING LIST
+async function addShoppingItem(name,qty,reason){
+    const n=name||document.getElementById('shoppingItem').value.trim();
+    if(!n) return alert('הכנס פריט');
+    const q=qty||document.getElementById('shoppingQuantity').value;
+    const r=reason||document.getElementById('shoppingReason').value;
+    const res=await fetch(`${API}/api/shopping-list`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({item_name:n,quantity:q,reason:r})});
+    if(!res.ok) return alert('שגיאה');
+    document.getElementById('shoppingItem').value='';
+    document.getElementById('shoppingQuantity').value='';
+    document.getElementById('shoppingReason').value='';
+    loadShoppingList();
+}
+
+async function loadShoppingList(){
+    const r=await fetch(`${API}/api/shopping-list`);
+    const items=await r.json();
+    document.getElementById('shoppingList').innerHTML=items.length?items.map(i=>`<div class="shopping-item">
+        <div class="item-info">
+            <div class="item-name">${i.item_name}</div>
+            <div class="item-stats">${i.quantity||'כמות'} ${i.reason?'| '+i.reason:''}</div>
+        </div>
+        <button class="btn-delete btn-small" onclick="deleteShoppingItem(${i.id})">🗑️</button>
+    </div>`).join(''):'<p style="color:var(--dim);text-align:center;padding:30px;">רשימה ריקה 🛒</p>';
+}
+
+async function deleteShoppingItem(id){
+    const r=await fetch(`${API}/api/shopping-list/${id}`,{method:'DELETE'});
+    if(!r.ok) return alert('שגיאה');
+    loadShoppingList();
 }
 
 // INIT
 async function init(){
-    const theme=localStorage.getItem('theme')||'light';
-    document.documentElement.setAttribute('data-theme',theme);
+    const t=localStorage.getItem('theme')||'light';
+    document.documentElement.setAttribute('data-theme',t);
+    document.querySelector(`.theme-btn[onclick="setTheme('${t}')"]`)?.classList.add('active');
 
-    if(localStorage.getItem('accessibilityMode')){
-        document.body.style.fontSize='18px';
+    if(localStorage.getItem('a11y')){
+        document.body.style.fontSize='20px';
+        document.documentElement.style.letterSpacing='1px';
     }
 
     const userId=localStorage.getItem('userId');
@@ -668,6 +790,9 @@ async function init(){
         loadFridge();
         loadFoodLog();
         loadNutritionSummary();
+        loadWorkoutLog();
+        loadSavedRecipes();
+        loadShoppingList();
     }
 }
 
