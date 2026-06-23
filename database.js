@@ -9,7 +9,10 @@ db.serialize(() => {
     CREATE TABLE IF NOT EXISTS users (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       username TEXT UNIQUE NOT NULL,
+      email TEXT UNIQUE NOT NULL,
+      phone_number TEXT UNIQUE NOT NULL,
       password TEXT NOT NULL,
+      verified INTEGER DEFAULT 0,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )
   `);
@@ -116,6 +119,20 @@ db.serialize(() => {
       expires_at DATETIME NOT NULL,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    )
+  `);
+
+  // Create verification_codes table
+  db.run(`
+    CREATE TABLE IF NOT EXISTS verification_codes (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER,
+      email TEXT,
+      phone_number TEXT,
+      code TEXT NOT NULL,
+      type TEXT NOT NULL,
+      expires_at DATETIME NOT NULL,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )
   `);
 

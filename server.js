@@ -4,7 +4,7 @@ const cors = require('cors');
 const fetch = require('node-fetch');
 const path = require('path');
 const session = require('express-session');
-const { signup, login } = require('./auth');
+const { signup, login, verifySignup } = require('./auth');
 const db = require('./database');
 
 const app = express();
@@ -28,15 +28,36 @@ if (!API_KEY) {
 
 // ===== AUTH ROUTES =====
 app.post('/api/auth/signup', async (req, res) => {
-  const { username, password } = req.body;
-  if (!username || !password) return res.status(400).json({ error: 'שם משתמש וסיסמה חובה' });
+  const { username, email, phoneNumber, password } = req.body;
+  if (!username || !email || !phoneNumber || !password) {
+    return res.status(400).json({ error: 'כל השדות חובה: שם משתמש, אימייל, טלפון, סיסמה' });
+  }
 
   try {
-    const user = await signup(username, password);
-    req.session.userId = user.id;
-    res.json({ id: user.id, username: user.username });
+    const user = await signup(username, email, phoneNumber, password);
+    res.json({
+      id: user.id,
+      username: user.username,
+      email: user.email,
+      phoneNumber: user.phoneNumber,
+      verificationCode: user.verificationCode,
+      message: user.message
+    });
   } catch (err) {
-    res.status(400).json({ error: err });
+    res.status(400).json({ error: err.toString() });
+  }
+});
+
+app.post('/api/auth/verify-signup', async (req, res) => {
+  const { userId, code } = req.body;
+  if (!userId || !code) return res.status(400).json({ error: 'קוד חובה' });
+
+  try {
+    const result = await verifySignup(userId, code);
+    req.session.userId = userId;
+    res.json(result);
+  } catch (err) {
+    res.status(400).json({ error: err.toString() });
   }
 });
 
@@ -67,35 +88,44 @@ app.post('/api/auth/forgot-password', (req, res) => {
   const { username } = req.body;
   if (!username) return res.status(400).json({ error: 'שם משתמש חסר' });
 
-  db.get('SELECT id FROM users WHERE username = ?', [username], (err, user) => {
+  db.get('SELECT id, email, phone_number FROM users WHERE username = ?', [username], (err, user) => {
     if (err || !user) return res.status(400).json({ error: 'שם משתמש לא קיים' });
 
-    const token = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-    const expiresAt = new Date(Date.now() + 1800000); // 30 minutes
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiresAt = new Date(Date.now() + 600000); // 10 minutes
 
     db.run(
-      'INSERT INTO password_reset_tokens (user_id, token, expires_at) VALUES (?, ?, ?)',
-      [user.id, token, expiresAt],
+      'INSERT INTO verification_codes (user_id, email, phone_number, code, type, expires_at) VALUES (?, ?, ?, ?, ?, ?)',
+      [user.id, user.email, user.phone_number, code, 'reset', expiresAt],
       function(err) {
         if (err) return res.status(500).json({ error: err.message });
         res.json({
           success: true,
-          resetToken: token,
-          message: 'קוד איפוס הסיסמה שלך: ' + token
+          userId: user.id,
+          resetCode: code,
+          email: user.email.replace(/(.{2})(.*)(@.*)/, '$1***$3'),
+          phone: user.phone_number.replace(/(.{3})(.*)/, '$1***'),
+          message: `קוד איפוס נשלח לאימייל ולטלפון: ${code}`
         });
       }
     );
   });
 });
 
-// Password reset - verify token and reset
+// Password reset - verify code and reset
 app.post('/api/auth/reset-password', async (req, res) => {
-  const { token, newPassword } = req.body;
-  if (!token || !newPassword) return res.status(400).json({ error: 'חסרים פרטים' });
+  const { userId, code, newPassword, confirmPassword } = req.body;
+  if (!userId || !code || !newPassword || !confirmPassword) {
+    return res.status(400).json({ error: 'חסרים פרטים' });
+  }
+
+  if (newPassword !== confirmPassword) {
+    return res.status(400).json({ error: 'הסיסמאות לא תואמות' });
+  }
 
   db.get(
-    'SELECT user_id FROM password_reset_tokens WHERE token = ? AND expires_at > datetime("now")',
-    [token],
+    'SELECT * FROM verification_codes WHERE user_id = ? AND code = ? AND type = "reset" AND expires_at > datetime("now")',
+    [userId, code],
     async (err, row) => {
       if (err || !row) return res.status(400).json({ error: 'קוד לא חוקי או פג תוקף' });
 
@@ -103,14 +133,14 @@ app.post('/api/auth/reset-password', async (req, res) => {
 
       db.run(
         'UPDATE users SET password = ? WHERE id = ?',
-        [hashedPassword, row.user_id],
+        [hashedPassword, userId],
         function(resetErr) {
           if (resetErr) return res.status(500).json({ error: resetErr.message });
 
-          // Delete used token
-          db.run('DELETE FROM password_reset_tokens WHERE token = ?', [token]);
+          // Delete used code
+          db.run('DELETE FROM verification_codes WHERE id = ?', [row.id]);
 
-          res.json({ success: true, message: 'הסיסמה אופסה בהצלחה!' });
+          res.json({ success: true, message: 'הסיסמה אופסה בהצלחה! התחבר עם הסיסמה החדשה' });
         }
       );
     }
