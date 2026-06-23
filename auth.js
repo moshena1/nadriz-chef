@@ -13,7 +13,7 @@ async function signup(username, email, password) {
 
     const hashedPassword = bcrypt.hashSync(password, 10);
     const code = generateVerificationCode();
-    const expiresAt = new Date(Date.now() + 600000); // 10 minutes
+    const expiresAt = new Date(Date.now() + 600000).toISOString(); // 10 minutes
 
     db.run(
       'INSERT INTO users (username, email, password) VALUES (?, ?, ?)',

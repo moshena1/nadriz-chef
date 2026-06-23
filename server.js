@@ -91,7 +91,7 @@ app.post('/api/auth/forgot-password', (req, res) => {
     if (err || !user) return res.status(400).json({ error: 'שם משתמש לא קיים' });
 
     const code = Math.floor(100000 + Math.random() * 900000).toString();
-    const expiresAt = new Date(Date.now() + 600000); // 10 minutes
+    const expiresAt = new Date(Date.now() + 600000).toISOString(); // 10 minutes
 
     db.run(
       'INSERT INTO verification_codes (user_id, email, code, type, expires_at) VALUES (?, ?, ?, ?, ?)',
