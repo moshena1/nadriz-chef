@@ -127,7 +127,6 @@ db.serialize(() => {
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       user_id INTEGER,
       email TEXT,
-      phone_number TEXT,
       code TEXT NOT NULL,
       type TEXT NOT NULL,
       expires_at DATETIME NOT NULL,
