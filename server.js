@@ -28,18 +28,17 @@ if (!API_KEY) {
 
 // ===== AUTH ROUTES =====
 app.post('/api/auth/signup', async (req, res) => {
-  const { username, email, phoneNumber, password } = req.body;
-  if (!username || !email || !phoneNumber || !password) {
-    return res.status(400).json({ error: 'כל השדות חובה: שם משתמש, אימייל, טלפון, סיסמה' });
+  const { username, email, password } = req.body;
+  if (!username || !email || !password) {
+    return res.status(400).json({ error: 'כל השדות חובה: שם משתמש, אימייל, סיסמה' });
   }
 
   try {
-    const user = await signup(username, email, phoneNumber, password);
+    const user = await signup(username, email, password);
     res.json({
       id: user.id,
       username: user.username,
       email: user.email,
-      phoneNumber: user.phoneNumber,
       verificationCode: user.verificationCode,
       message: user.message
     });
@@ -88,24 +87,26 @@ app.post('/api/auth/forgot-password', (req, res) => {
   const { username } = req.body;
   if (!username) return res.status(400).json({ error: 'שם משתמש חסר' });
 
-  db.get('SELECT id, email, phone_number FROM users WHERE username = ?', [username], (err, user) => {
+  db.get('SELECT id, email FROM users WHERE username = ?', [username], (err, user) => {
     if (err || !user) return res.status(400).json({ error: 'שם משתמש לא קיים' });
 
     const code = Math.floor(100000 + Math.random() * 900000).toString();
     const expiresAt = new Date(Date.now() + 600000); // 10 minutes
 
     db.run(
-      'INSERT INTO verification_codes (user_id, email, phone_number, code, type, expires_at) VALUES (?, ?, ?, ?, ?, ?)',
-      [user.id, user.email, user.phone_number, code, 'reset', expiresAt],
+      'INSERT INTO verification_codes (user_id, email, code, type, expires_at) VALUES (?, ?, ?, ?, ?)',
+      [user.id, user.email, code, 'reset', expiresAt],
       function(err) {
         if (err) return res.status(500).json({ error: err.message });
+
+        console.log(`🔐 Password reset code for ${user.email}: ${code}`);
+
         res.json({
           success: true,
           userId: user.id,
           resetCode: code,
           email: user.email.replace(/(.{2})(.*)(@.*)/, '$1***$3'),
-          phone: user.phone_number.replace(/(.{3})(.*)/, '$1***'),
-          message: `קוד איפוס נשלח לאימייל ולטלפון: ${code}`
+          message: `קוד איפוס: ${code} (הוצג בקונסול השרת)`
         });
       }
     );

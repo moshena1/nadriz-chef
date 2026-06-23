@@ -5,9 +5,9 @@ function generateVerificationCode() {
   return Math.floor(100000 + Math.random() * 900000).toString();
 }
 
-async function signup(username, email, phoneNumber, password) {
+async function signup(username, email, password) {
   return new Promise((resolve, reject) => {
-    if (!username || !email || !phoneNumber || !password) {
+    if (!username || !email || !password) {
       return reject('כל השדות חובה');
     }
 
@@ -16,12 +16,12 @@ async function signup(username, email, phoneNumber, password) {
     const expiresAt = new Date(Date.now() + 600000); // 10 minutes
 
     db.run(
-      'INSERT INTO users (username, email, phone_number, password) VALUES (?, ?, ?, ?)',
-      [username, email, phoneNumber, hashedPassword],
+      'INSERT INTO users (username, email, password) VALUES (?, ?, ?)',
+      [username, email, hashedPassword],
       function(err) {
         if (err) {
           if (err.message.includes('UNIQUE')) {
-            reject('שם משתמש, אימייל או טלפון כבר קיימים');
+            reject('שם משתמש או אימייל כבר קיימים');
           } else {
             reject(err.message);
           }
@@ -30,19 +30,21 @@ async function signup(username, email, phoneNumber, password) {
 
           // Create verification code
           db.run(
-            'INSERT INTO verification_codes (user_id, email, phone_number, code, type, expires_at) VALUES (?, ?, ?, ?, ?, ?)',
-            [userId, email, phoneNumber, code, 'signup', expiresAt],
+            'INSERT INTO verification_codes (user_id, email, code, type, expires_at) VALUES (?, ?, ?, ?, ?)',
+            [userId, email, code, 'signup', expiresAt],
             (codeErr) => {
               if (codeErr) {
                 reject(codeErr.message);
               } else {
+                // Log code to console for development
+                console.log(`🔐 Verification code for ${email}: ${code}`);
+
                 resolve({
                   id: userId,
                   username,
                   email,
-                  phoneNumber,
                   verificationCode: code,
-                  message: `קוד אימות: ${code}`
+                  message: `קוד אימות: ${code} (הוצג בקונסול השרת)`
                 });
               }
             }

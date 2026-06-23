@@ -385,10 +385,6 @@
                 <input type="email" id="signupEmail" placeholder="your@email.com">
             </div>
             <div class="form-group">
-                <label>מספר טלפון</label>
-                <input type="tel" id="signupPhone" placeholder="0501234567">
-            </div>
-            <div class="form-group">
                 <label>סיסמה</label>
                 <input type="password" id="signupPassword" placeholder="סיסמה חזקה (לפחות 4 תווים)">
             </div>
@@ -629,29 +625,27 @@ function toggleAccessibility(){
 async function signup(){
     const u=document.getElementById('signupUsername').value.trim();
     const e=document.getElementById('signupEmail').value.trim();
-    const ph=document.getElementById('signupPhone').value.trim();
     const pwd=document.getElementById('signupPassword').value;
 
-    if(!u||!e||!ph||!pwd) return alert('כל השדות חובה');
+    if(!u||!e||!pwd) return alert('כל השדות חובה');
     if(!e.includes('@')) return alert('אימייל לא חוקי');
-    if(ph.length<9) return alert('מספר טלפון לא חוקי');
     if(pwd.length<4) return alert('סיסמה חייבת להיות לפחות 4 תווים');
 
     const r=await fetch(`${API}/api/auth/signup`,{
         method:'POST',
         headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({username:u,email:e,phoneNumber:ph,password:pwd})
+        body:JSON.stringify({username:u,email:e,password:pwd})
     });
     const d=await r.json();
     if(!r.ok) return alert(d.error);
 
     localStorage.setItem('tempUserId',d.id);
-    document.getElementById('signupVerificationTarget').textContent=`אימייל: ${d.email}\nטלפון: ${d.phoneNumber}`;
+    document.getElementById('signupVerificationTarget').textContent=`אימייל: ${d.email}`;
     document.getElementById('signupVerificationCode').textContent=d.verificationCode;
     document.getElementById('signupVerificationForm').classList.remove('hidden');
     document.querySelectorAll('#signupForm .btn')[1].style.display='none';
 
-    alert('✅ קוד אימות: '+d.verificationCode);
+    alert('✅ קוד אימות: '+d.verificationCode+'\n\n(קוד זה הופץ גם בקונסול השרת)');
 }
 
 async function verifySignup(){
@@ -723,9 +717,9 @@ async function requestPasswordReset(){
     if(!r.ok) return alert(d.error);
 
     localStorage.setItem('resetUserId',d.userId);
-    document.getElementById('resetTokenDisplay').textContent='קוד האיפוס:\n'+d.resetCode+'\n\nנשלח ל: '+d.email+' ו-'+d.phone;
+    document.getElementById('resetTokenDisplay').textContent='קוד האיפוס:\n'+d.resetCode+'\n\nנשלח ל: '+d.email;
     document.getElementById('resetTokenForm').classList.remove('hidden');
-    alert('✅ קוד איפוס: '+d.resetCode);
+    alert('✅ קוד איפוס: '+d.resetCode+'\n\n(קוד זה הופץ גם בקונסול השרת)');
 }
 
 async function resetPassword(){
