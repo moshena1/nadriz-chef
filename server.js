@@ -62,6 +62,61 @@ app.get('/api/auth/status', (req, res) => {
   res.json({ userId: req.session.userId || null });
 });
 
+// Password reset - request reset
+app.post('/api/auth/forgot-password', (req, res) => {
+  const { username } = req.body;
+  if (!username) return res.status(400).json({ error: 'שם משתמש חסר' });
+
+  db.get('SELECT id FROM users WHERE username = ?', [username], (err, user) => {
+    if (err || !user) return res.status(400).json({ error: 'שם משתמש לא קיים' });
+
+    const token = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+    const expiresAt = new Date(Date.now() + 1800000); // 30 minutes
+
+    db.run(
+      'INSERT INTO password_reset_tokens (user_id, token, expires_at) VALUES (?, ?, ?)',
+      [user.id, token, expiresAt],
+      function(err) {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({
+          success: true,
+          resetToken: token,
+          message: 'קוד איפוס הסיסמה שלך: ' + token
+        });
+      }
+    );
+  });
+});
+
+// Password reset - verify token and reset
+app.post('/api/auth/reset-password', async (req, res) => {
+  const { token, newPassword } = req.body;
+  if (!token || !newPassword) return res.status(400).json({ error: 'חסרים פרטים' });
+
+  db.get(
+    'SELECT user_id FROM password_reset_tokens WHERE token = ? AND expires_at > datetime("now")',
+    [token],
+    async (err, row) => {
+      if (err || !row) return res.status(400).json({ error: 'קוד לא חוקי או פג תוקף' });
+
+      const hashedPassword = require('bcryptjs').hashSync(newPassword, 10);
+
+      db.run(
+        'UPDATE users SET password = ? WHERE id = ?',
+        [hashedPassword, row.user_id],
+        function(resetErr) {
+          if (resetErr) return res.status(500).json({ error: resetErr.message });
+
+          // Delete used token
+          db.run('DELETE FROM password_reset_tokens WHERE token = ?', [token]);
+
+          res.json({ success: true, message: 'הסיסמה אופסה בהצלחה!' });
+        }
+      );
+    }
+  );
+});
+
 // ===== FRIDGE CRUD (with user isolation) =====
 app.get('/api/fridge', (req, res) => {
   const userId = req.session.userId;
