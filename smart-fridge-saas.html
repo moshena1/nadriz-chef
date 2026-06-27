@@ -898,13 +898,17 @@ async function getRecipeQuiz(){
     if(!type||!diff) return alert('בחר שתיים');
 
     const category=type==='food'?'אוכל':'קינוח';
+    const fridgeItems=JSON.parse(localStorage.getItem('nadriz-fridge')||'[]').map(i=>i.name).join(', ');
+
+    if(!fridgeItems) return alert('תחילה הוסף מוצרים למקרר');
+
     const r=await fetch(`${API}/api/claude`,{
         method:'POST',
         headers:{'Content-Type':'application/json'},
         body:JSON.stringify({
             model:'claude-haiku-4-5-20251001',
             max_tokens:500,
-            messages:[{role:'user',content:`תן מתכון ${category} ${diff} בעברית (3 שלבים בלבד). תחזור: שם, תכן קצר.`}]
+            messages:[{role:'user',content:`תן מתכון ${category} ${diff} בעברית (3 שלבים בלבד) שמשתמש רק בחומרים הבאים: ${fridgeItems}. אם אין חומרים מספיק, אמור זאת. תחזור: שם, תכן קצר.`}]
         })
     });
     const d=await r.json();
@@ -914,13 +918,17 @@ async function getRecipeQuiz(){
 async function searchRecipe(){
     const q=document.getElementById('recipeSearch').value.trim();
     if(!q) return alert('הכנס שם מתכון');
+    const fridgeItems=JSON.parse(localStorage.getItem('nadriz-fridge')||'[]').map(i=>i.name).join(', ');
+
+    const prompt=fridgeItems ? `תן מתכון עבור: ${q} בעברית (4 שלבים) שמשתמש בחומרים הבאים מהמקרר שלי: ${fridgeItems}. ציין קלוריות משוערות. אם אי אפשר, שאול למה.` : `תן מתכון עבור: ${q} בעברית (4 שלבים). ציין קלוריות משוערות.`;
+
     const r=await fetch(`${API}/api/claude`,{
         method:'POST',
         headers:{'Content-Type':'application/json'},
         body:JSON.stringify({
             model:'claude-haiku-4-5-20251001',
             max_tokens:600,
-            messages:[{role:'user',content:`תן מתכון עבור: ${q} בעברית (4 שלבים). ציין קלוריות משוערות.`}]
+            messages:[{role:'user',content:prompt}]
         })
     });
     const d=await r.json();
