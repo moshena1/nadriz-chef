@@ -443,18 +443,17 @@
             <div class="tabs">
                 <button class="tab-btn active" onclick="switchTab('fridge')">🧊 המקרר</button>
                 <button class="tab-btn" onclick="switchTab('mealPhoto')">📸 צלם ארוחה</button>
-                <button class="tab-btn" onclick="switchTab('fridgeScan')">📷 סרוק מקרר</button>
                 <button class="tab-btn" onclick="switchTab('fitness')">🏋️ כושר מקצועי</button>
                 <button class="tab-btn" onclick="switchTab('recipes')">📖 מתכונים</button>
-                <button class="tab-btn" onclick="switchTab('nutrition')">🥗 תזונה וכושר</button>
                 <button class="tab-btn" onclick="switchTab('saved')">❤️ שמורים</button>
-                <button class="tab-btn" onclick="switchTab('shopping')">🛒 חוסרים</button>
             </div>
 
             <!-- FRIDGE TAB -->
             <div id="fridgeTab" class="tab-content active">
                 <h2>🧊 המוצרים שלי</h2>
-                <div class="grid-2">
+
+                <!-- ADD ITEM & RECEIPT -->
+                <div class="grid-2" style="margin-bottom:20px;">
                     <div>
                         <h3>➕ הוסף מוצר</h3>
                         <input type="text" id="itemName" placeholder="שם המוצר" autofocus>
@@ -467,7 +466,28 @@
                         <button class="btn" onclick="fetchReceipt()">חלץ מוצרים</button>
                     </div>
                 </div>
+
+                <!-- FRIDGE SCANNER -->
+                <div style="background:var(--border);border-radius:12px;padding:20px;margin-bottom:20px;">
+                    <h3>📷 סרוק את המקרר</h3>
+                    <input type="file" id="fridgePhotoInput" accept="image/*" style="margin-bottom:10px;">
+                    <button class="btn" onclick="scanFridgePhoto()">🔍 סרוק מקרר</button>
+                    <div id="fridgeScanResult" style="margin-top:15px;"></div>
+                </div>
+
+                <!-- CURRENT FRIDGE ITEMS -->
+                <h3>📦 המוצרים שלי</h3>
                 <div id="fridgeList"></div>
+
+                <!-- MISSING ITEMS -->
+                <h3 style="margin-top:30px;">🛒 חוסרים לרכישה</h3>
+                <div style="background:var(--border);border-radius:12px;padding:15px;margin-bottom:20px;">
+                    <input type="text" id="shoppingItem" placeholder="שם המוצר" style="margin-bottom:10px;">
+                    <input type="text" id="shoppingQuantity" placeholder="כמות" style="margin-bottom:10px;">
+                    <input type="text" id="shoppingReason" placeholder="סיבה (אופציונלי)" style="margin-bottom:10px;">
+                    <button class="btn" onclick="addShoppingItem()">➕ הוסף לרשימה</button>
+                </div>
+                <div id="shoppingList"></div>
             </div>
 
             <!-- MEAL PHOTO TAB -->
@@ -487,35 +507,119 @@
                 <div id="mealAnalysisResult"></div>
             </div>
 
-            <!-- FRIDGE SCAN TAB -->
-            <div id="fridgeScanTab" class="tab-content">
-                <h2>📷 סרוק את המקרר שלך</h2>
-                <p style="color:var(--dim);margin-bottom:20px;">צלם את המקרר מבפנים - המערכת תזהה את כל המוצרים ותעדכן אותם אוטומטית</p>
-                <div style="background:var(--border);border-radius:12px;padding:20px;margin-bottom:20px;">
-                    <input type="file" id="fridgePhotoInput" accept="image/*" style="margin-bottom:10px;">
-                    <button class="btn" onclick="scanFridgePhoto()">🔍 סרוק את המקרר</button>
-                </div>
-                <div id="fridgeScanResult"></div>
-            </div>
-
-            <!-- FITNESS PROFILE TAB -->
+<!-- FITNESS PROFILE TAB -->
             <div id="fitnessTab" class="tab-content">
-                <h2>🏋️ תוכנית כושר מקצועית</h2>
-                <p style="color:var(--dim);margin-bottom:20px;">בחר את יעדך בכושר וקבל תוכנית מותאמת אישית</p>
+                <h2>🏋️ כושר מקצועי + תזונה</h2>
+
+                <!-- PROFILE SETUP -->
                 <div style="background:var(--border);border-radius:12px;padding:20px;margin-bottom:20px;">
-                    <h3>בחר את היעד שלך:</h3>
-                    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:20px;">
-                        <button class="btn" onclick="setFitnessGoal('muscle_gain')" style="background:linear-gradient(135deg,#ff6b6b,#ff5252);">💪 עלייה בשריר</button>
-                        <button class="btn" onclick="setFitnessGoal('cutting')" style="background:linear-gradient(135deg,#4ade80,#22c55e);">✨ חיטוב</button>
-                        <button class="btn" onclick="setFitnessGoal('maintenance')" style="background:linear-gradient(135deg,#60a5fa,#3b82f6);">⚖️ שמירה</button>
+                    <h3>📊 הפרופיל שלי</h3>
+                    <div class="grid-2">
+                        <div>
+                            <label>גיל:</label>
+                            <input type="number" id="userAge" placeholder="24" style="margin-bottom:10px;">
+                            <label>גובה (ס"מ):</label>
+                            <input type="number" id="userHeight" placeholder="180" style="margin-bottom:10px;">
+                            <label>משקל נוכחי (ק"ג):</label>
+                            <input type="number" id="currentWeight" placeholder="80" style="margin-bottom:10px;">
+                            <label>משקל יעד (ק"ג):</label>
+                            <input type="number" id="targetWeight" placeholder="75" style="margin-bottom:10px;">
+                        </div>
+                        <div>
+                            <label>רמת פעילות:</label>
+                            <select id="activityLevel" style="margin-bottom:10px;">
+                                <option>בחר רמה</option>
+                                <option value="sedentary">סדנטרית (מינימום תנועה)</option>
+                                <option value="light">קלה (אימון 1-3 ימים)</option>
+                                <option value="moderate">בינונית (אימון 3-5 ימים)</option>
+                                <option value="active">גבוהה (אימון 6-7 ימים)</option>
+                            </select>
+                            <label>בחר את היעד שלך:</label>
+                            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
+                                <button class="btn" id="btnMuscle" onclick="setFitnessGoal('muscle_gain')" style="background:rgba(255,107,107,0.3);padding:8px;font-size:0.9em;">💪 שריר</button>
+                                <button class="btn" id="btnCutting" onclick="setFitnessGoal('cutting')" style="background:rgba(74,222,128,0.3);padding:8px;font-size:0.9em;">✨ חיטוב</button>
+                                <button class="btn" id="btnMaintenance" onclick="setFitnessGoal('maintenance')" style="background:rgba(96,165,250,0.3);padding:8px;font-size:0.9em;">⚖️ שמירה</button>
+                            </div>
+                        </div>
                     </div>
-                    <label>יעד קלוריות יומי:</label>
-                    <input type="number" id="dailyCaloriesGoal" placeholder="2500" style="margin-bottom:10px;">
-                    <label>אימונים בשבוע:</label>
-                    <input type="number" id="workoutsPerWeek" placeholder="4" style="margin-bottom:10px;">
-                    <button class="btn" onclick="saveFitnessProfile()">💾 שמור תוכנית</button>
+                    <button class="btn" onclick="calculateMetrics()" style="width:100%;margin-bottom:10px;">🧮 חשב את המטרות שלי</button>
                 </div>
-                <div id="fitnessProfileDisplay"></div>
+
+                <!-- BMI & MACROS DISPLAY -->
+                <div id="metricsDisplay" style="background:var(--border);border-radius:12px;padding:20px;margin-bottom:20px;display:none;">
+                    <h3>📈 המטרות שלך:</h3>
+                    <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px;text-align:center;margin-bottom:20px;">
+                        <div style="background:var(--panel);padding:15px;border-radius:8px;">
+                            <div style="color:var(--dim);font-size:0.9em;">BMI</div>
+                            <div id="bmiDisplay" style="font-size:1.3em;font-weight:bold;">--</div>
+                        </div>
+                        <div style="background:var(--panel);padding:15px;border-radius:8px;">
+                            <div style="color:var(--dim);font-size:0.9em;">קלוריות/יום</div>
+                            <div id="caloriesDisplay" style="font-size:1.3em;font-weight:bold;">--</div>
+                        </div>
+                        <div style="background:var(--panel);padding:15px;border-radius:8px;">
+                            <div style="color:var(--dim);font-size:0.9em;">חלבון (גר')</div>
+                            <div id="proteinDisplay" style="font-size:1.3em;font-weight:bold;">--</div>
+                        </div>
+                        <div style="background:var(--panel);padding:15px;border-radius:8px;">
+                            <div style="color:var(--dim);font-size:0.9em;">פחמימות (גר')</div>
+                            <div id="carbsDisplay" style="font-size:1.3em;font-weight:bold;">--</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- DAILY SUMMARY -->
+                <h3>📋 סיכום היום</h3>
+                <div id="nutritionSummary" class="nutrition-summary" style="background:var(--border);border-radius:12px;padding:15px;margin-bottom:20px;"></div>
+
+                <!-- FOOD LOGGING -->
+                <h3>🍽️ רישום מזון</h3>
+                <div style="background:var(--border);border-radius:12px;padding:15px;margin-bottom:20px;">
+                    <div class="grid-2">
+                        <div>
+                            <input type="text" id="foodName" placeholder="שם המזון" style="margin-bottom:10px;">
+                            <input type="text" id="foodQuantity" placeholder="כמות" style="margin-bottom:10px;">
+                            <select id="mealType" style="margin-bottom:10px;">
+                                <option>ארוחת בוקר</option>
+                                <option>חטיף</option>
+                                <option selected>ארוחת צהריים</option>
+                                <option>ארוחת ערב</option>
+                            </select>
+                        </div>
+                        <div style="display:flex;flex-direction:column;justify-content:flex-end;">
+                            <button class="btn" onclick="addFood()">➕ הוסף</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- FOOD LOG -->
+                <h3>🍖 האוכל שלי היום</h3>
+                <div id="foodLog" style="margin-bottom:30px;"></div>
+
+                <!-- FITNESS TRAINER -->
+                <h3>💪 מאמן כושר</h3>
+                <div style="background:var(--border);border-radius:12px;padding:15px;margin-bottom:20px;">
+                    <div class="grid-2">
+                        <div>
+                            <input type="text" id="exerciseName" placeholder="שם התרגיל" style="margin-bottom:10px;">
+                            <input type="number" id="duration" placeholder="משך (דקות)" style="margin-bottom:10px;">
+                            <input type="number" id="sets" placeholder="סטים" style="margin-bottom:10px;">
+                        </div>
+                        <div>
+                            <input type="number" id="reps" placeholder="חזרות" style="margin-bottom:10px;">
+                            <select id="difficulty" style="margin-bottom:10px;">
+                                <option>קל</option>
+                                <option>בינוני</option>
+                                <option>קשה</option>
+                            </select>
+                            <button class="btn" onclick="addWorkout()">➕ הוסף</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- WORKOUT LOG -->
+                <h3>🏋️ התרגילים שלי היום</h3>
+                <div id="workoutLog"></div>
             </div>
 
             <!-- RECIPES TAB -->
@@ -548,110 +652,12 @@
             </div>
 
             <!-- NUTRITION & FITNESS TAB -->
-            <div id="nutritionTab" class="tab-content">
-                <h2>🥗 תזונה וכושר</h2>
-
-                <div class="grid-2">
-                    <!-- NUTRITION PROFILE -->
-                    <div>
-                        <h3>📊 הפרופיל שלי</h3>
-                        <input type="number" id="userAge" placeholder="גיל" style="margin-bottom:10px;">
-                        <input type="number" id="userHeight" placeholder="גובה (ס"מ)" style="margin-bottom:10px;">
-                        <input type="number" id="currentWeight" placeholder="משקל עכשוו (ק"ג)" style="margin-bottom:10px;">
-                        <input type="number" id="targetWeight" placeholder="משקל יעד (ק"ג)" style="margin-bottom:10px;">
-                        <select id="activityLevel" style="margin-bottom:10px;">
-                            <option>בחר רמת פעילות</option>
-                            <option>נמוכה</option>
-                            <option>בינונית</option>
-                            <option>גבוהה</option>
-                        </select>
-                        <select id="goal" style="margin-bottom:10px;">
-                            <option>בחר יעד</option>
-                            <option>ירידה במשקל</option>
-                            <option>שמירה על משקל</option>
-                            <option>עלייה במשקל</option>
-                        </select>
-                        <input type="text" id="dietaryPrefs" placeholder="העדפות (ללא גלוטן, ווגן וכו')" style="margin-bottom:10px;">
-                        <button class="btn" onclick="saveNutritionProfile()">💾 שמור</button>
-                    </div>
-
-                    <!-- FITNESS TRAINER -->
-                    <div>
-                        <h3>💪 מאמן כושר</h3>
-                        <input type="text" id="exerciseName" placeholder="שם התרגיל" style="margin-bottom:10px;">
-                        <input type="number" id="duration" placeholder="משך (דקות)" style="margin-bottom:10px;">
-                        <input type="number" id="sets" placeholder="סטים" style="margin-bottom:10px;">
-                        <input type="number" id="reps" placeholder="חזרות" style="margin-bottom:10px;">
-                        <select id="location" style="margin-bottom:10px;">
-                            <option>בחר מיקום</option>
-                            <option>בית</option>
-                            <option>מכון</option>
-                        </select>
-                        <select id="difficulty" style="margin-bottom:10px;">
-                            <option>קל</option>
-                            <option>בינוני</option>
-                            <option>קשה</option>
-                        </select>
-                        <button class="btn" onclick="addWorkout()">➕ הוסף תרגיל</button>
-                    </div>
-                </div>
-
-                <!-- DAILY TRACKING -->
-                <h3>🍽️ קלוט מזון - היום</h3>
-                <div style="background:var(--border);border-radius:12px;padding:15px;margin-bottom:20px;">
-                    <div class="grid-2">
-                        <div>
-                            <input type="text" id="foodName" placeholder="שם המזון">
-                            <input type="text" id="foodQuantity" placeholder="כמות">
-                            <select id="mealType">
-                                <option>ארוחת בוקר</option>
-                                <option>חטיף</option>
-                                <option selected>ארוחת צהריים</option>
-                                <option>ארוחת ערב</option>
-                            </select>
-                        </div>
-                        <div style="display:flex;flex-direction:column;justify-content:flex-end;">
-                            <button class="btn" onclick="addFood()">➕ הוסף</button>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- NUTRITION SUMMARY -->
-                <h3>📈 סיכום התזונה של היום</h3>
-                <div id="nutritionSummary" class="nutrition-summary"></div>
-
-                <h3 style="margin-top:30px;">🍖 האוכל שלי היום</h3>
-                <div id="foodLog"></div>
-
-                <h3 style="margin-top:30px;">💡 המלצות מאישי</h3>
-                <button class="btn" onclick="getNutritionRecommendation()" style="margin-bottom:20px;">🤖 קבל המלצות</button>
-                <div id="nutritionRecommendation"></div>
-
-                <h3 style="margin-top:30px;">🏋️ התרגילים שלי היום</h3>
-                <div id="workoutLog"></div>
-            </div>
-
-            <!-- SAVED RECIPES TAB -->
+<!-- SAVED RECIPES TAB -->
             <div id="savedTab" class="tab-content">
                 <h2>❤️ המתכונים השמורים שלי</h2>
                 <div id="savedRecipesList"></div>
             </div>
 
-            <!-- SHOPPING LIST TAB -->
-            <div id="shoppingTab" class="tab-content">
-                <h2>🛒 רשימת חוסרים</h2>
-                <p style="color:var(--dim);margin-bottom:20px;">כשמסירים משהו מהמקרר, הוא מופיע כאן</p>
-
-                <div style="background:var(--border);border-radius:12px;padding:15px;margin-bottom:20px;">
-                    <h3>➕ הוסף פריט</h3>
-                    <input type="text" id="shoppingItem" placeholder="שם המוצר" style="margin-bottom:10px;">
-                    <input type="text" id="shoppingQuantity" placeholder="כמות" style="margin-bottom:10px;">
-                    <input type="text" id="shoppingReason" placeholder="סיבה (אופציונלי)" style="margin-bottom:10px;">
-                    <button class="btn" onclick="addShoppingItem()">הוסף לרשימה</button>
-                </div>
-
-                <div id="shoppingList"></div>
-            </div>
         </div>
     </div>
 </div>
@@ -1309,13 +1315,64 @@ async function scanFridgePhoto(){
 
 // FITNESS PROFILE - Set goal
 function setFitnessGoal(goal){
-    document.querySelector('input[type="hidden"][id="selectedFitnessGoal"]')?.remove();
-    const hidden = document.createElement('input');
-    hidden.type = 'hidden';
-    hidden.id = 'selectedFitnessGoal';
-    hidden.value = goal;
-    document.body.appendChild(hidden);
-    alert('✅ יעד נבחר: ' + goal);
+    document.querySelectorAll('[id^="btn"]').forEach(b=>b.style.background='rgba(96,165,250,0.1)');
+    if(goal==='muscle_gain') document.getElementById('btnMuscle').style.background='rgba(255,107,107,0.5)';
+    else if(goal==='cutting') document.getElementById('btnCutting').style.background='rgba(74,222,128,0.5)';
+    else if(goal==='maintenance') document.getElementById('btnMaintenance').style.background='rgba(96,165,250,0.5)';
+    localStorage.setItem('fitnessGoal', goal);
+}
+
+function calculateMetrics(){
+    const age=parseInt(document.getElementById('userAge').value);
+    const height=parseInt(document.getElementById('userHeight').value);
+    const weight=parseInt(document.getElementById('currentWeight').value);
+    const activity=document.getElementById('activityLevel').value;
+    const goal=localStorage.getItem('fitnessGoal')||'maintenance';
+
+    if(!age||!height||!weight||!activity) return alert('מלא את כל השדות');
+
+    // BMI
+    const bmi=(weight/((height/100)**2)).toFixed(1);
+
+    // Mifflin-St Jeor (BMR) - גברים (עבור פשטות נניח גברים)
+    const bmr=10*weight+6.25*height-5*age+5;
+
+    // Activity multiplier
+    const multipliers={'sedentary':1.2,'light':1.375,'moderate':1.55,'active':1.725};
+    const tdee=bmr*(multipliers[activity]||1.55);
+
+    // Adjust for goal
+    let dailyCalories=tdee;
+    if(goal==='muscle_gain') dailyCalories=tdee+300;
+    else if(goal==='cutting') dailyCalories=tdee-400;
+
+    // Macros based on goal
+    let protein, carbs, fat;
+    if(goal==='muscle_gain'){
+        protein=(weight*2.2)*4; // 2.2g/kg protein * 4 cal/g
+        fat=(dailyCalories*0.25); // 25% calories from fat
+        carbs=dailyCalories*0.35/4;
+    } else if(goal==='cutting'){
+        protein=(weight*2.4)*4; // Higher protein for cutting
+        fat=(dailyCalories*0.25);
+        carbs=(dailyCalories-protein-fat*9)/4;
+    } else {
+        protein=(weight*1.8)*4;
+        fat=(dailyCalories*0.25);
+        carbs=(dailyCalories-protein-fat*9)/4;
+    }
+
+    protein=protein/4; carbs=carbs; fat=fat/9;
+
+    document.getElementById('bmiDisplay').innerHTML=bmi;
+    document.getElementById('caloriesDisplay').innerHTML=Math.round(dailyCalories);
+    document.getElementById('proteinDisplay').innerHTML=Math.round(protein);
+    document.getElementById('carbsDisplay').innerHTML=Math.round(carbs);
+
+    document.getElementById('metricsDisplay').style.display='block';
+    localStorage.setItem('dailyCalories', dailyCalories);
+    localStorage.setItem('dailyProtein', protein);
+    localStorage.setItem('dailyCarbs', carbs);
 }
 
 async function saveFitnessProfile(){
