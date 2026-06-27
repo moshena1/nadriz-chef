@@ -353,7 +353,7 @@
         @media(max-width:768px){
             .grid-2,.grid-3,.grid-4{grid-template-columns:1fr;}
             .header{flex-direction:column;align-items:flex-start;margin-bottom:30px;}
-            .tabs{justify-content:flex-start;overflow-x:auto;}
+            .tabs{overflow-x:auto;justify-content:center;}
             .auth-card{padding:40px 30px;border-radius:24px;}
             .panel{padding:24px;border-radius:20px;}
             .food-item,.recipe-card,.workout-card,.shopping-item{
@@ -371,8 +371,8 @@
             .auth-card{padding:30px 20px;border-radius:20px;}
             .panel{padding:18px;border-radius:16px;}
             .header h1{font-size:1.8em;}
-            .tabs{flex-direction:column;gap:4px;}
-            .tab-btn{width:100%;text-align:left;padding:10px 16px;}
+            .tabs{justify-content:center;gap:6px;}
+            .tab-btn{padding:10px 16px;font-size:0.8em;}
         }
     </style>
 </head>
@@ -770,19 +770,31 @@ async function verifySignup(){
     if(!userId||!code) return alert('הכנס את הקוד');
     if(code.length!==6) return alert('קוד חייב להיות 6 ספרות');
 
-    const r=await fetch(`${API}/api/auth/verify-signup`,{
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({userId:parseInt(userId),code})
-    });
-    const d=await r.json();
-    if(!r.ok) return alert(d.error);
+    try{
+        const r=await fetch(`${API}/api/auth/verify-signup`,{
+            method:'POST',
+            headers:{'Content-Type':'application/json'},
+            body:JSON.stringify({userId:parseInt(userId),code})
+        });
+        const d=await r.json();
+        if(!r.ok) return alert(d.error);
 
-    localStorage.removeItem('tempUserId');
-    localStorage.setItem('userId',userId);
-    localStorage.setItem('username',document.getElementById('signupUsername').value);
-    alert('✅ חשבון מאומת בהצלחה!');
-    location.reload();
+        // שמור את הפרטים בבטחון
+        const username=document.getElementById('signupUsername').value;
+        localStorage.removeItem('tempUserId');
+        localStorage.setItem('userId',userId);
+        localStorage.setItem('username',username);
+        localStorage.setItem('isLoggedIn','true');
+
+        console.log('✅ Signup verified. Saved:', {userId,username});
+
+        alert('✅ חשבון מאומת בהצלחה!');
+
+        // רענן הדף בעוד 500ms
+        setTimeout(()=>location.reload(),500);
+    }catch(e){
+        alert('❌ שגיאה: '+e.message);
+    }
 }
 
 async function login(){
@@ -790,19 +802,45 @@ async function login(){
     const p=document.getElementById('loginPassword').value;
     const rememberMe=document.getElementById('rememberMe').checked;
     if(!u||!p) return alert('שדות חובה');
-    const r=await fetch(`${API}/api/auth/login`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:u,password:p})});
-    const d=await r.json();
-    if(!r.ok) return alert(d.error);
-    localStorage.setItem('userId',d.id);
-    localStorage.setItem('username',u);
-    if(rememberMe){localStorage.setItem('rememberMe','true');localStorage.setItem('savedUsername',u);}else{localStorage.removeItem('rememberMe');}
-    location.reload();
+
+    try{
+        const r=await fetch(`${API}/api/auth/login`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:u,password:p})});
+        const d=await r.json();
+        if(!r.ok) return alert(d.error);
+
+        // שמור את הפרטים ב-localStorage בבטחון
+        localStorage.setItem('userId',d.id.toString());
+        localStorage.setItem('username',u);
+        localStorage.setItem('isLoggedIn','true');
+        if(rememberMe){
+            localStorage.setItem('rememberMe','true');
+            localStorage.setItem('savedUsername',u);
+        }
+
+        console.log('✅ Login successful. Saved:', {userId:d.id,username:u});
+
+        // רענן הדף בעוד 500ms כדי לתת זמן ל-localStorage
+        setTimeout(()=>location.reload(),500);
+    }catch(e){
+        alert('❌ שגיאה: '+e.message);
+    }
 }
 
 async function logout(){
-    await fetch(`${API}/api/auth/logout`,{method:'POST'});
-    localStorage.clear();
-    location.reload();
+    try{
+        await fetch(`${API}/api/auth/logout`,{method:'POST'});
+    }catch(e){
+        console.log('Logout fetch error (non-blocking):', e);
+    }
+
+    // מחק רק את פרטי ההתחברות, שמור את העדפות אחרות
+    localStorage.removeItem('userId');
+    localStorage.removeItem('username');
+    localStorage.removeItem('isLoggedIn');
+    localStorage.removeItem('tempUserId');
+
+    console.log('✅ Logged out');
+    setTimeout(()=>location.reload(),300);
 }
 
 function toggleAuthForm(){
@@ -1271,13 +1309,21 @@ async function init(){
     }
 
     const userId=localStorage.getItem('userId');
-    if(!userId){
+    const isLoggedIn=localStorage.getItem('isLoggedIn')==='true';
+
+    console.log('🔍 Init check:', {userId,isLoggedIn});
+
+    if(!userId||!isLoggedIn){
+        console.log('❌ Not logged in - showing auth screen');
         document.getElementById('authScreen').style.display='flex';
         document.getElementById('dashboard').style.display='none';
     }else{
+        console.log('✅ User logged in:', userId);
         document.getElementById('authScreen').style.display='none';
         document.getElementById('dashboard').classList.add('active');
-        document.getElementById('username').textContent=localStorage.getItem('username')||'חבר';
+        const username=localStorage.getItem('username')||'חבר';
+        document.getElementById('username').textContent=username;
+        console.log('Loading user data for:', username);
         loadFridge();
         loadFoodLog();
         loadNutritionSummary();
