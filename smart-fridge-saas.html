@@ -187,6 +187,7 @@
             display:flex;gap:10px;flex-wrap:wrap;margin-bottom:30px;
             border-bottom:2px solid var(--border);padding-bottom:0;
             animation:slideInRight 0.8s ease-out;
+            justify-content:center;
         }
         .tab-btn{
             padding:13px 24px;background:transparent;border:none;
@@ -711,8 +712,9 @@ const API = window.location.origin;
 function setTheme(t){
     document.documentElement.setAttribute('data-theme',t);
     document.querySelectorAll('.theme-btn').forEach(b=>b.classList.remove('active'));
-    event.target.classList.add('active');
+    document.querySelector(`.theme-btn[onclick="setTheme('${t}')"]`)?.classList.add('active');
     localStorage.setItem('theme',t);
+    console.log('✅ Theme changed to:', t);
 }
 
 function toggleAccessibility(){
@@ -1237,6 +1239,21 @@ async function deleteShoppingItem(id){
 }
 
 // INIT
+function loadSavedWorkoutPlan(){
+    const plan=localStorage.getItem('workoutPlan');
+    if(plan && document.getElementById('workoutPlanDisplay')){
+        document.getElementById('workoutPlanDisplay').innerHTML=`
+            <div style="background:linear-gradient(135deg,rgba(34,197,94,0.15),rgba(59,130,246,0.1));border:2px solid var(--green);border-radius:16px;padding:25px;margin-bottom:20px;white-space:pre-wrap;font-size:1em;line-height:1.8;font-family:monospace;color:var(--text);box-shadow:0 8px 32px rgba(74,222,128,0.2);">
+            ${plan}
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                <button class="btn" onclick="editWorkoutPlan()" style="background:linear-gradient(135deg,var(--orange),#fb923c);">✏️ ערוך תוכנית</button>
+                <button class="btn" onclick="clearWorkoutPlan()" style="background:linear-gradient(135deg,var(--red),#ff5252);">🗑️ מחק תוכנית</button>
+            </div>
+        `;
+    }
+}
+
 async function init(){
     const t=localStorage.getItem('theme')||'light';
     document.documentElement.setAttribute('data-theme',t);
@@ -1267,6 +1284,7 @@ async function init(){
         loadWorkoutLog();
         loadSavedRecipes();
         loadShoppingList();
+        loadSavedWorkoutPlan();
     }
 }
 
@@ -1502,12 +1520,15 @@ async function generateWorkoutPlan(){
         localStorage.setItem('workoutPlanGoal', goal);
 
         document.getElementById('workoutPlanDisplay').innerHTML=`
-            <div style="background:var(--panel);border:2px solid var(--green);border-radius:12px;padding:20px;margin-bottom:15px;white-space:pre-wrap;font-size:0.95em;line-height:1.6;">${plan}</div>
+            <div style="background:linear-gradient(135deg,rgba(34,197,94,0.15),rgba(59,130,246,0.1));border:2px solid var(--green);border-radius:16px;padding:25px;margin-bottom:20px;white-space:pre-wrap;font-size:1em;line-height:1.8;font-family:monospace;color:var(--text);box-shadow:0 8px 32px rgba(74,222,128,0.2);">
+            ${plan}
+            </div>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-                <button class="btn" onclick="editWorkoutPlan()" style="background:var(--orange);">✏️ ערוך תוכנית</button>
-                <button class="btn" onclick="clearWorkoutPlan()" style="background:var(--red);">🗑️ מחק תוכנית</button>
+                <button class="btn" onclick="editWorkoutPlan()" style="background:linear-gradient(135deg,var(--orange),#fb923c);">✏️ ערוך תוכנית</button>
+                <button class="btn" onclick="clearWorkoutPlan()" style="background:linear-gradient(135deg,var(--red),#ff5252);">🗑️ מחק תוכנית</button>
             </div>
         `;
+        document.getElementById('workoutPlanDisplay').scrollIntoView({behavior:'smooth',block:'center'});
     }catch(e){
         document.getElementById('workoutPlanDisplay').innerHTML='❌ שגיאה בעיצוב התוכנית';
     }
@@ -1519,12 +1540,15 @@ function editWorkoutPlan(){
     if(newPlan) {
         localStorage.setItem('workoutPlan',newPlan);
         document.getElementById('workoutPlanDisplay').innerHTML=`
-            <div style="background:var(--panel);border:2px solid var(--green);border-radius:12px;padding:20px;margin-bottom:15px;white-space:pre-wrap;font-size:0.95em;line-height:1.6;">${newPlan}</div>
+            <div style="background:linear-gradient(135deg,rgba(34,197,94,0.15),rgba(59,130,246,0.1));border:2px solid var(--green);border-radius:16px;padding:25px;margin-bottom:20px;white-space:pre-wrap;font-size:1em;line-height:1.8;font-family:monospace;color:var(--text);box-shadow:0 8px 32px rgba(74,222,128,0.2);">
+            ${newPlan}
+            </div>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-                <button class="btn" onclick="editWorkoutPlan()" style="background:var(--orange);">✏️ ערוך שוב</button>
-                <button class="btn" onclick="clearWorkoutPlan()" style="background:var(--red);">🗑️ מחק תוכנית</button>
+                <button class="btn" onclick="editWorkoutPlan()" style="background:linear-gradient(135deg,var(--orange),#fb923c);">✏️ ערוך שוב</button>
+                <button class="btn" onclick="clearWorkoutPlan()" style="background:linear-gradient(135deg,var(--red),#ff5252);">🗑️ מחק תוכנית</button>
             </div>
         `;
+        document.getElementById('workoutPlanDisplay').scrollIntoView({behavior:'smooth',block:'center'});
     }
 }
 
@@ -1595,20 +1619,6 @@ async function loadFitnessProfile(){
             ${planHTML}
         </div>
     `;
-}
-
-async function generateWorkoutPlan(goal){
-    if(!confirm('ליצור תוכנית אימונים חדשה?')) return;
-    const res = await fetch(`${API}/api/fitness/generate-plan`,{
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({goal})
-    });
-    const data = await res.json();
-    if(data.success){
-        alert('✅ תוכנית אימונים נוצרה!');
-        loadFitnessProfile();
-    }
 }
 
 window.addEventListener('load',init);
