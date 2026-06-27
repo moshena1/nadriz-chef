@@ -185,8 +185,9 @@
         .tab-content{display:none;animation:fadeInDown 0.4s ease-out;}
         .tab-content.active{display:block;}
 
-        .grid-2{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:24px;margin-bottom:24px;}
-        .grid-3{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:18px;margin-bottom:24px;}
+        .grid-2{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:24px;margin-bottom:24px;}
+        .grid-3{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:18px;margin-bottom:24px;}
+        .grid-4{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:24px;}
 
         input[type=text],input[type=number],input[type=date],input[type=password],select,textarea{
             width:100%;background:var(--bg);border:2px solid var(--border);
@@ -548,22 +549,22 @@
                 <!-- BMI & MACROS DISPLAY -->
                 <div id="metricsDisplay" style="background:var(--border);border-radius:12px;padding:20px;margin-bottom:20px;display:none;">
                     <h3>📈 המטרות שלך:</h3>
-                    <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px;text-align:center;margin-bottom:20px;">
+                    <div class="grid-4" style="text-align:center;">
                         <div style="background:var(--panel);padding:15px;border-radius:8px;">
-                            <div style="color:var(--dim);font-size:0.9em;">BMI</div>
-                            <div id="bmiDisplay" style="font-size:1.3em;font-weight:bold;">--</div>
+                            <div style="color:var(--dim);font-size:0.85em;">BMI</div>
+                            <div id="bmiDisplay" style="font-size:1.4em;font-weight:bold;margin-top:8px;">--</div>
                         </div>
                         <div style="background:var(--panel);padding:15px;border-radius:8px;">
-                            <div style="color:var(--dim);font-size:0.9em;">קלוריות/יום</div>
-                            <div id="caloriesDisplay" style="font-size:1.3em;font-weight:bold;">--</div>
+                            <div style="color:var(--dim);font-size:0.85em;">קלוריות</div>
+                            <div id="caloriesDisplay" style="font-size:1.4em;font-weight:bold;margin-top:8px;">--</div>
                         </div>
                         <div style="background:var(--panel);padding:15px;border-radius:8px;">
-                            <div style="color:var(--dim);font-size:0.9em;">חלבון (גר')</div>
-                            <div id="proteinDisplay" style="font-size:1.3em;font-weight:bold;">--</div>
+                            <div style="color:var(--dim);font-size:0.85em;">חלבון (גר')</div>
+                            <div id="proteinDisplay" style="font-size:1.4em;font-weight:bold;margin-top:8px;">--</div>
                         </div>
                         <div style="background:var(--panel);padding:15px;border-radius:8px;">
-                            <div style="color:var(--dim);font-size:0.9em;">פחמימות (גר')</div>
-                            <div id="carbsDisplay" style="font-size:1.3em;font-weight:bold;">--</div>
+                            <div style="color:var(--dim);font-size:0.85em;">פחמימות (גר')</div>
+                            <div id="carbsDisplay" style="font-size:1.4em;font-weight:bold;margin-top:8px;">--</div>
                         </div>
                     </div>
                 </div>
@@ -596,30 +597,12 @@
                 <h3>🍖 האוכל שלי היום</h3>
                 <div id="foodLog" style="margin-bottom:30px;"></div>
 
-                <!-- FITNESS TRAINER -->
-                <h3>💪 מאמן כושר</h3>
-                <div style="background:var(--border);border-radius:12px;padding:15px;margin-bottom:20px;">
-                    <div class="grid-2">
-                        <div>
-                            <input type="text" id="exerciseName" placeholder="שם התרגיל" style="margin-bottom:10px;">
-                            <input type="number" id="duration" placeholder="משך (דקות)" style="margin-bottom:10px;">
-                            <input type="number" id="sets" placeholder="סטים" style="margin-bottom:10px;">
-                        </div>
-                        <div>
-                            <input type="number" id="reps" placeholder="חזרות" style="margin-bottom:10px;">
-                            <select id="difficulty" style="margin-bottom:10px;">
-                                <option>קל</option>
-                                <option>בינוני</option>
-                                <option>קשה</option>
-                            </select>
-                            <button class="btn" onclick="addWorkout()">➕ הוסף</button>
-                        </div>
-                    </div>
+                <!-- GENERATED WORKOUT PLAN -->
+                <h3>🏋️ תוכנית האימונים שלך</h3>
+                <div style="background:var(--border);border-radius:12px;padding:20px;margin-bottom:20px;">
+                    <button class="btn" onclick="generateWorkoutPlan()" style="width:100%;margin-bottom:15px;">🤖 צור תוכנית אימונים</button>
+                    <div id="workoutPlanDisplay"></div>
                 </div>
-
-                <!-- WORKOUT LOG -->
-                <h3>🏋️ התרגילים שלי היום</h3>
-                <div id="workoutLog"></div>
             </div>
 
             <!-- RECIPES TAB -->
@@ -1381,6 +1364,85 @@ function calculateMetrics(){
     localStorage.setItem('dailyCalories', dailyCalories);
     localStorage.setItem('dailyProtein', protein);
     localStorage.setItem('dailyCarbs', carbs);
+}
+
+async function generateWorkoutPlan(){
+    const age=parseInt(document.getElementById('userAge').value);
+    const weight=parseInt(document.getElementById('currentWeight').value);
+    const goal=localStorage.getItem('fitnessGoal')||'maintenance';
+    const activity=document.getElementById('activityLevel').value;
+
+    if(!age||!weight||!goal||!activity) return alert('קודם מלא את הפרופיל וחשב את המטרות');
+
+    document.getElementById('workoutPlanDisplay').innerHTML='⏳ מייצר תוכנית אימונים...';
+
+    const prompt=`בתור מאמן כושר מקצועי, צור תוכנית אימונים אישית בעברית בהתאם לנתונים:
+- גיל: ${age}
+- משקל: ${weight} ק"ג
+- יעד: ${goal===('muscle_gain')?'עלייה בשריר':goal==='cutting'?'חיטוב':'שמירה'}
+- רמת פעילות: ${activity}
+
+הפקד תוכנית לשבוע (7 ימים) עם:
+1. שם התרגיל
+2. משך (דקות)
+3. סטים וחזרות
+4. קבוצת שרירים
+
+עיצוב:
+יום 1: [תרגיל 1] - [סטים] סטים, [חזרות] חזרות, [משך] דקות - [קבוצה]
+יום 2: ...וכו'
+
+אל תוסף תיאורים מילוליים, רק את התוכנית הגולמית.`;
+
+    try{
+        const res=await fetch(`${API}/api/claude`,{
+            method:'POST',
+            headers:{'Content-Type':'application/json'},
+            body:JSON.stringify({
+                model:'claude-haiku-4-5-20251001',
+                max_tokens:1000,
+                messages:[{role:'user',content:prompt}]
+            })
+        });
+        const d=await res.json();
+        const plan=d.content[0].text;
+
+        localStorage.setItem('workoutPlan', plan);
+        localStorage.setItem('workoutPlanGoal', goal);
+
+        document.getElementById('workoutPlanDisplay').innerHTML=`
+            <div style="background:var(--panel);border:2px solid var(--green);border-radius:12px;padding:20px;margin-bottom:15px;white-space:pre-wrap;font-size:0.95em;line-height:1.6;">${plan}</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                <button class="btn" onclick="editWorkoutPlan()" style="background:var(--orange);">✏️ ערוך תוכנית</button>
+                <button class="btn" onclick="clearWorkoutPlan()" style="background:var(--red);">🗑️ מחק תוכנית</button>
+            </div>
+        `;
+    }catch(e){
+        document.getElementById('workoutPlanDisplay').innerHTML='❌ שגיאה בעיצוב התוכנית';
+    }
+}
+
+function editWorkoutPlan(){
+    const plan=localStorage.getItem('workoutPlan')||'';
+    const newPlan=prompt('ערוך את התוכנית שלך:',plan);
+    if(newPlan) {
+        localStorage.setItem('workoutPlan',newPlan);
+        document.getElementById('workoutPlanDisplay').innerHTML=`
+            <div style="background:var(--panel);border:2px solid var(--green);border-radius:12px;padding:20px;margin-bottom:15px;white-space:pre-wrap;font-size:0.95em;line-height:1.6;">${newPlan}</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                <button class="btn" onclick="editWorkoutPlan()" style="background:var(--orange);">✏️ ערוך שוב</button>
+                <button class="btn" onclick="clearWorkoutPlan()" style="background:var(--red);">🗑️ מחק תוכנית</button>
+            </div>
+        `;
+    }
+}
+
+function clearWorkoutPlan(){
+    if(confirm('בטוח שאתה רוצה למחוק את התוכנית?')) {
+        localStorage.removeItem('workoutPlan');
+        localStorage.removeItem('workoutPlanGoal');
+        document.getElementById('workoutPlanDisplay').innerHTML='';
+    }
 }
 
 async function saveFitnessProfile(){
