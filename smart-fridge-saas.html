@@ -609,6 +609,12 @@
             <div id="recipesTab" class="tab-content">
                 <h2>📖 מתכונים</h2>
 
+                <!-- AUTO SUGGESTIONS FROM FRIDGE -->
+                <div id="fridgeSuggestions" style="background:rgba(74,222,128,0.1);border:2px solid var(--green);border-radius:12px;padding:20px;margin-bottom:20px;display:none;">
+                    <h3>💡 המלצות בהתאם למוצרים שלך</h3>
+                    <div id="fridgeSuggestionsContent"></div>
+                </div>
+
                 <div style="background:var(--border);border-radius:12px;padding:20px;margin-bottom:20px;">
                     <h3>🎯 שאלון קצר - בואו נמצא מתכון!</h3>
                     <div class="quiz-container">
@@ -803,6 +809,7 @@ function switchTab(t){
     document.querySelectorAll('.tab-btn').forEach(e=>e.classList.remove('active'));
     document.getElementById(t+'Tab').classList.add('active');
     event.target.classList.add('active');
+    if(t==='recipes') loadFridgeSuggestions();
 }
 
 // FRIDGE
@@ -875,6 +882,37 @@ async function fetchReceipt(){
 }
 
 // RECIPES
+async function loadFridgeSuggestions(){
+    const fridge=JSON.parse(localStorage.getItem('nadriz-fridge')||'[]');
+    if(fridge.length<2) return document.getElementById('fridgeSuggestions').style.display='none';
+
+    const items=fridge.map(i=>i.name).join(', ');
+    document.getElementById('fridgeSuggestions').style.display='block';
+    document.getElementById('fridgeSuggestionsContent').innerHTML='⏳ מייצר הצעות...';
+
+    try{
+        const res=await fetch(`${API}/api/claude`,{
+            method:'POST',
+            headers:{'Content-Type':'application/json'},
+            body:JSON.stringify({
+                model:'claude-haiku-4-5-20251001',
+                max_tokens:300,
+                messages:[{role:'user',content:`בהתאם לרכיבים הבאים שלי: ${items}\nצור 3 הצעות מתכון קצרות בעברית (שם + 1 משפט תיאור) שניתן להכין עם דברים אלה בלבד. כל הצעה בשורה חדשה.`}]
+            })
+        });
+        const d=await res.json();
+        const suggestions=d.content[0].text.split('\n').filter(s=>s.trim()).slice(0,3);
+
+        document.getElementById('fridgeSuggestionsContent').innerHTML=`
+            <div style="display:grid;gap:10px;">
+                ${suggestions.map(s=>`<div style="background:var(--panel);padding:12px;border-radius:8px;font-size:0.95em;line-height:1.4;">${s}</div>`).join('')}
+            </div>
+        `;
+    }catch(e){
+        document.getElementById('fridgeSuggestions').style.display='none';
+    }
+}
+
 async function getRecipeQuiz(){
     const type=document.querySelector('input[name="mealType"]:checked')?.value;
     const diff=document.querySelector('input[name="difficulty"]:checked')?.value;
