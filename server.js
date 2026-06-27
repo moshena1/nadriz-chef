@@ -11,6 +11,8 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 const API_KEY = process.env.ANTHROPIC_API_KEY;
 
+console.log('🔧 Config loaded: PORT=' + PORT + ', API_KEY=' + (API_KEY ? 'set' : 'MISSING'));
+
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
@@ -19,7 +21,8 @@ app.use(session({
   resave: false,
   saveUninitialized: true
 }));
-app.use(express.static('.'));
+// API routes BEFORE static files
+app.use('/api', express.Router());
 
 if (!API_KEY) {
   console.error('❌ ANTHROPIC_API_KEY not found in .env file!');
@@ -499,6 +502,332 @@ app.delete('/api/workouts/:id', (req, res) => {
   );
 });
 
+// MEAL PHOTO ANALYSIS - Vision-based calorie tracking
+app.post('/api/meal/analyze-photo', async (req, res) => {
+  const userId = req.session.userId;
+  if (!userId) return res.status(401).json({ error: 'לא מחובר' });
+
+  const { photoBase64, mealType } = req.body;
+  if (!photoBase64) return res.status(400).json({ error: 'תמונה חסרה' });
+
+  try {
+    const claudeRes = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': API_KEY,
+        'anthropic-version': '2023-06-01'
+      },
+      body: JSON.stringify({
+        model: 'claude-opus-4-1',
+        max_tokens: 1000,
+        messages: [{
+          role: 'user',
+          content: [
+            {
+              type: 'image',
+              source: {
+                type: 'base64',
+                media_type: 'image/jpeg',
+                data: photoBase64
+              }
+            },
+            {
+              type: 'text',
+              text: `נתח את הארוחה בתמונה. זיהה כל פריט, כמותו בערך. חזר JSON בלבד:
+{
+  "foods": [{"name":"שם","quantity":"כמות"}],
+  "totalCalories": 0,
+  "protein": 0,
+  "carbs": 0,
+  "fat": 0
+}`
+            }
+          ]
+        }]
+      })
+    });
+
+    const claudeData = await claudeRes.json();
+    const analysisText = claudeData.content[0].text;
+    const analysis = JSON.parse(analysisText.replace(/```json|```/g, '').trim());
+
+    // Save to database
+    db.run(
+      `INSERT INTO meal_photos (user_id, photo_base64, detected_foods, calories, protein, carbs, fat, meal_type)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      [userId, photoBase64, JSON.stringify(analysis.foods), analysis.totalCalories, analysis.protein, analysis.carbs, analysis.fat, mealType],
+      function(err) {
+        if (err) res.status(500).json({ error: err.message });
+        else res.json({ success: true, analysis, id: this.lastID });
+      }
+    );
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// FRIDGE PHOTO SCANNING - AI detects products
+app.post('/api/fridge/scan-photo', async (req, res) => {
+  const userId = req.session.userId;
+  if (!userId) return res.status(401).json({ error: 'לא מחובר' });
+
+  const { photoBase64 } = req.body;
+  if (!photoBase64) return res.status(400).json({ error: 'תמונה חסרה' });
+
+  try {
+    const claudeRes = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': API_KEY,
+        'anthropic-version': '2023-06-01'
+      },
+      body: JSON.stringify({
+        model: 'claude-opus-4-1',
+        max_tokens: 1000,
+        messages: [{
+          role: 'user',
+          content: [
+            {
+              type: 'image',
+              source: {
+                type: 'base64',
+                media_type: 'image/jpeg',
+                data: photoBase64
+              }
+            },
+            {
+              type: 'text',
+              text: `זיהה את כל המוצרים והמצרכים במקרר. חזר JSON בלבד:
+{
+  "items": [{"name":"שם מוצר","quantity":"הערכה לכמות"}]
+}`
+            }
+          ]
+        }]
+      })
+    });
+
+    const claudeData = await claudeRes.json();
+    const detectionText = claudeData.content[0].text;
+    const detection = JSON.parse(detectionText.replace(/```json|```/g, '').trim());
+
+    // Auto-add items to fridge
+    const items = detection.items || [];
+    for (const item of items) {
+      db.run(
+        'INSERT INTO fridge_items (user_id, item_name, quantity) VALUES (?, ?, ?)',
+        [userId, item.name, item.quantity]
+      );
+    }
+
+    // Save photo scan
+    db.run(
+      'INSERT INTO fridge_photos (user_id, photo_base64, detected_items) VALUES (?, ?, ?)',
+      [userId, photoBase64, JSON.stringify(items)]
+    );
+
+    res.json({ success: true, addedItems: items.length, items });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// NUTRITION DAILY/WEEKLY/MONTHLY SUMMARY
+app.get('/api/nutrition/summary/:period', (req, res) => {
+  const userId = req.session.userId;
+  if (!userId) return res.status(401).json({ error: 'לא מחובר' });
+
+  const period = req.params.period; // 'daily', 'weekly', 'monthly'
+  let dateFilter = '';
+
+  if (period === 'daily') dateFilter = "date = CURRENT_DATE";
+  else if (period === 'weekly') dateFilter = "date >= date('now', '-7 days')";
+  else if (period === 'monthly') dateFilter = "date >= date('now', 'start of month')";
+
+  const query = `
+    SELECT
+      SUM(calories) as totalCalories,
+      SUM(protein) as totalProtein,
+      SUM(carbs) as totalCarbs,
+      SUM(fat) as totalFat,
+      COUNT(*) as mealCount
+    FROM food_log
+    WHERE user_id = ? AND ${dateFilter}
+  `;
+
+  db.get(query, [userId], (err, row) => {
+    if (err) res.status(500).json({ error: err.message });
+    else res.json(row || { totalCalories: 0, totalProtein: 0, totalCarbs: 0, totalFat: 0, mealCount: 0 });
+  });
+});
+
+// FITNESS PROFILE - Set professional fitness goal
+app.post('/api/fitness-profile/set-goal', (req, res) => {
+  const userId = req.session.userId;
+  if (!userId) return res.status(401).json({ error: 'לא מחובר' });
+
+  const { goal, dailyCalories, protein, carbs, fat, workoutsPerWeek } = req.body;
+  if (!goal) return res.status(400).json({ error: 'יעד חסר' });
+
+  db.run(
+    `INSERT OR REPLACE INTO fitness_profiles
+     (user_id, goal, daily_calories, macros_protein, macros_carbs, macros_fat, workouts_per_week)
+     VALUES (?, ?, ?, ?, ?, ?, ?)`,
+    [userId, goal, dailyCalories, protein, carbs, fat, workoutsPerWeek],
+    function(err) {
+      if (err) res.status(500).json({ error: err.message });
+      else res.json({ success: true, goal });
+    }
+  );
+});
+
+// GET fitness profile
+app.get('/api/fitness-profile', (req, res) => {
+  const userId = req.session.userId;
+  if (!userId) return res.status(401).json({ error: 'לא מחובר' });
+
+  db.get('SELECT * FROM fitness_profiles WHERE user_id = ?', [userId], (err, row) => {
+    if (err) res.status(500).json({ error: err.message });
+    else res.json(row || {});
+  });
+});
+
+// EDIT MEAL PHOTO DETAILS
+app.post('/api/meal/edit-details', (req, res) => {
+  const userId = req.session.userId;
+  if (!userId) return res.status(401).json({ error: 'לא מחובר' });
+
+  const { mealPhotoId, editedFoods, calories, protein, carbs, fat } = req.body;
+
+  db.run(
+    `INSERT INTO meal_photo_edits (meal_photo_id, user_id, edited_foods, edited_calories, edited_protein, edited_carbs, edited_fat)
+     VALUES (?, ?, ?, ?, ?, ?, ?)`,
+    [mealPhotoId, userId, JSON.stringify(editedFoods), calories, protein, carbs, fat],
+    function(err) {
+      if (err) res.status(500).json({ error: err.message });
+      else {
+        // Also update the original meal_photos record
+        db.run(
+          'UPDATE meal_photos SET calories = ?, protein = ?, carbs = ?, fat = ? WHERE id = ?',
+          [calories, protein, carbs, fat, mealPhotoId]
+        );
+        res.json({ success: true, id: this.lastID });
+      }
+    }
+  );
+});
+
+// SMART EXPIRY DATE - only for specific items
+app.post('/api/fridge/set-expiry', (req, res) => {
+  const userId = req.session.userId;
+  if (!userId) return res.status(401).json({ error: 'לא מחובר' });
+
+  const { fridgeItemId, expiryDate } = req.body;
+  const PERISHABLES = ['חלב', 'גבינה', 'יוגורט', 'חמאה', 'ביצים', 'בשר', 'דגים', 'חומוס', 'טחינה', 'יוקי', 'קוטג\''];
+
+  db.run(
+    'UPDATE fridge_items SET expiry_date = ?, needs_expiry = 1 WHERE id = ? AND user_id = ?',
+    [expiryDate, fridgeItemId, userId],
+    function(err) {
+      if (err) res.status(500).json({ error: err.message });
+      else res.json({ success: true });
+    }
+  );
+});
+
+// GENERATE WORKOUT PLAN based on goal
+app.post('/api/fitness/generate-plan', async (req, res) => {
+  const userId = req.session.userId;
+  if (!userId) return res.status(401).json({ error: 'לא מחובר' });
+
+  const { goal } = req.body;
+
+  try {
+    const claudeRes = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': API_KEY,
+        'anthropic-version': '2023-06-01'
+      },
+      body: JSON.stringify({
+        model: 'claude-opus-4-1',
+        max_tokens: 2000,
+        messages: [{
+          role: 'user',
+          content: `תוכנית אימונים שבועית עבור יעד: ${goal}
+
+          החזר JSON בלבד:
+{
+  "week": [
+    {
+      "day": 1,
+      "dayName": "ראשון",
+      "exercises": [
+        {"name": "תרגיל", "sets": 4, "reps": "8-10"}
+      ]
+    }
+  ]
+}`
+        }]
+      })
+    });
+
+    const claudeData = await claudeRes.json();
+    const planText = claudeData.content[0].text;
+    const plan = JSON.parse(planText.replace(/```json|```/g, '').trim());
+
+    // Save plan to DB
+    for (const day of plan.week) {
+      for (const exercise of day.exercises) {
+        db.run(
+          `INSERT INTO workout_plans (user_id, goal, week_number, day_number, exercise_name, sets, reps)
+           VALUES (?, ?, ?, ?, ?, ?, ?)`,
+          [userId, goal, 1, day.day, exercise.name, exercise.sets, exercise.reps]
+        );
+      }
+    }
+
+    res.json({ success: true, plan });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// GET WORKOUT PLAN
+app.get('/api/fitness/plan', (req, res) => {
+  const userId = req.session.userId;
+  if (!userId) return res.status(401).json({ error: 'לא מחובר' });
+
+  db.all(
+    'SELECT * FROM workout_plans WHERE user_id = ? ORDER BY week_number, day_number',
+    [userId],
+    (err, rows) => {
+      if (err) res.status(500).json({ error: err.message });
+      else res.json(rows || []);
+    }
+  );
+});
+
+// SHARE RECIPE
+app.post('/api/recipes/share', (req, res) => {
+  const userId = req.session.userId;
+  if (!userId) return res.status(401).json({ error: 'לא מחובר' });
+
+  const { recipeId, shareWithEmail } = req.body;
+
+  db.run(
+    'INSERT INTO shared_recipes (recipe_id, shared_by_user_id, shared_with_email) VALUES (?, ?, ?)',
+    [recipeId, userId, shareWithEmail],
+    function(err) {
+      if (err) res.status(500).json({ error: err.message });
+      else res.json({ success: true, message: `משותף עם ${shareWithEmail}` });
+    }
+  );
+});
+
 // Chat endpoint - talk to the chef
 app.post('/api/chat', async (req, res) => {
   const { message, fridgeItems } = req.body;
@@ -539,12 +868,21 @@ app.post('/api/chat', async (req, res) => {
   }
 });
 
+// Serve static files (AFTER all API routes)
+app.use(express.static('.'));
+
 // Serve HTML (SaaS version with auth)
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'smart-fridge-saas.html'));
 });
 
-app.listen(PORT, () => {
-  console.log(`✅ Smart Fridge Server running at http://localhost:${PORT}`);
+const PORT_NUM = parseInt(PORT) || 3001;
+const server = app.listen(PORT_NUM, '0.0.0.0', () => {
+  console.log(`✅ Smart Fridge Server running at http://localhost:${PORT_NUM}`);
   console.log('🔐 API Key loaded from .env (not exposed to client)');
+});
+
+server.on('error', (err) => {
+  console.error('❌ Server error:', err.message);
+  process.exit(1);
 });

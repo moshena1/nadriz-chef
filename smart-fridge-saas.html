@@ -196,14 +196,20 @@
         input:focus,select:focus,textarea:focus{outline:none;border-color:var(--green);}
         textarea{min-height:100px;resize:vertical;}
 
+        @keyframes cardEnter{
+            from{opacity:0;transform:scale(0.95) translateY(8px);}
+            to{opacity:1;transform:scale(1) translateY(0);}
+        }
+
         .food-item,.recipe-card,.workout-card,.shopping-item{
             background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:18px;
             margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;
-            transition:all 0.4s cubic-bezier(0.23,1,0.320,1);
+            transition:all 250ms cubic-bezier(0.23,1,0.320,1);
             backdrop-filter:blur(10px);box-shadow:0 4px 16px rgba(0,0,0,0.08);
+            animation:cardEnter 300ms cubic-bezier(0.23,1,0.320,1) both;
         }
         .food-item:hover,.recipe-card:hover,.workout-card:hover,.shopping-item:hover{
-            background:var(--panel);transform:translateY(-4px);
+            background:var(--panel);transform:translateY(-4px) scale(1.02);
             border-color:rgba(74,222,128,0.3);
             box-shadow:0 12px 32px rgba(74,222,128,0.2),inset 0 1px 0 var(--glass-light);
         }
@@ -332,6 +338,10 @@
                 <label>סיסמה</label>
                 <input type="password" id="loginPassword" placeholder="סיסמה">
             </div>
+            <div style="margin-bottom:20px;display:flex;align-items:center;gap:8px;">
+                <input type="checkbox" id="rememberMe" style="width:18px;height:18px;cursor:pointer;">
+                <label style="margin:0;cursor:pointer;font-size:0.9em;" onclick="document.getElementById('rememberMe').checked = !document.getElementById('rememberMe').checked;">זכור אותי</label>
+            </div>
             <button class="btn" onclick="login()">כניסה</button>
             <div class="auth-toggle" style="margin-top:20px;font-size:0.9em;">
                 <a onclick="showForgotPassword()" style="margin-left:10px;">שכחתי סיסמה?</a>
@@ -432,6 +442,9 @@
         <div class="panel">
             <div class="tabs">
                 <button class="tab-btn active" onclick="switchTab('fridge')">🧊 המקרר</button>
+                <button class="tab-btn" onclick="switchTab('mealPhoto')">📸 צלם ארוחה</button>
+                <button class="tab-btn" onclick="switchTab('fridgeScan')">📷 סרוק מקרר</button>
+                <button class="tab-btn" onclick="switchTab('fitness')">🏋️ כושר מקצועי</button>
                 <button class="tab-btn" onclick="switchTab('recipes')">📖 מתכונים</button>
                 <button class="tab-btn" onclick="switchTab('nutrition')">🥗 תזונה וכושר</button>
                 <button class="tab-btn" onclick="switchTab('saved')">❤️ שמורים</button>
@@ -455,6 +468,54 @@
                     </div>
                 </div>
                 <div id="fridgeList"></div>
+            </div>
+
+            <!-- MEAL PHOTO TAB -->
+            <div id="mealPhotoTab" class="tab-content">
+                <h2>📸 צלם את הארוחה שלך</h2>
+                <p style="color:var(--dim);margin-bottom:20px;">צלם את הארוחה שלך והמערכת תנתח את הקלוריות והערכים התזונתיים</p>
+                <div style="background:var(--border);border-radius:12px;padding:20px;margin-bottom:20px;">
+                    <input type="file" id="mealPhotoInput" accept="image/*" style="margin-bottom:10px;">
+                    <select id="mealTypeSelect" style="margin-bottom:10px;width:100%;padding:10px;border-radius:10px;border:2px solid var(--border);background:var(--panel);color:var(--text);">
+                        <option value="breakfast">🌅 ארוחת בוקר</option>
+                        <option value="lunch">🥗 ארוחת צהריים</option>
+                        <option value="dinner">🍽️ ארוחת ערב</option>
+                        <option value="snack">🍎 חטיף</option>
+                    </select>
+                    <button class="btn" onclick="analyzeMealPhoto()">🤖 נתח את הארוחה</button>
+                </div>
+                <div id="mealAnalysisResult"></div>
+            </div>
+
+            <!-- FRIDGE SCAN TAB -->
+            <div id="fridgeScanTab" class="tab-content">
+                <h2>📷 סרוק את המקרר שלך</h2>
+                <p style="color:var(--dim);margin-bottom:20px;">צלם את המקרר מבפנים - המערכת תזהה את כל המוצרים ותעדכן אותם אוטומטית</p>
+                <div style="background:var(--border);border-radius:12px;padding:20px;margin-bottom:20px;">
+                    <input type="file" id="fridgePhotoInput" accept="image/*" style="margin-bottom:10px;">
+                    <button class="btn" onclick="scanFridgePhoto()">🔍 סרוק את המקרר</button>
+                </div>
+                <div id="fridgeScanResult"></div>
+            </div>
+
+            <!-- FITNESS PROFILE TAB -->
+            <div id="fitnessTab" class="tab-content">
+                <h2>🏋️ תוכנית כושר מקצועית</h2>
+                <p style="color:var(--dim);margin-bottom:20px;">בחר את יעדך בכושר וקבל תוכנית מותאמת אישית</p>
+                <div style="background:var(--border);border-radius:12px;padding:20px;margin-bottom:20px;">
+                    <h3>בחר את היעד שלך:</h3>
+                    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:20px;">
+                        <button class="btn" onclick="setFitnessGoal('muscle_gain')" style="background:linear-gradient(135deg,#ff6b6b,#ff5252);">💪 עלייה בשריר</button>
+                        <button class="btn" onclick="setFitnessGoal('cutting')" style="background:linear-gradient(135deg,#4ade80,#22c55e);">✨ חיטוב</button>
+                        <button class="btn" onclick="setFitnessGoal('maintenance')" style="background:linear-gradient(135deg,#60a5fa,#3b82f6);">⚖️ שמירה</button>
+                    </div>
+                    <label>יעד קלוריות יומי:</label>
+                    <input type="number" id="dailyCaloriesGoal" placeholder="2500" style="margin-bottom:10px;">
+                    <label>אימונים בשבוע:</label>
+                    <input type="number" id="workoutsPerWeek" placeholder="4" style="margin-bottom:10px;">
+                    <button class="btn" onclick="saveFitnessProfile()">💾 שמור תוכנית</button>
+                </div>
+                <div id="fitnessProfileDisplay"></div>
             </div>
 
             <!-- RECIPES TAB -->
@@ -596,7 +657,7 @@
 </div>
 
 <script>
-const API = 'http://localhost:3000';
+const API = 'http://localhost:3002';
 
 // THEME
 function setTheme(t){
@@ -623,27 +684,31 @@ function toggleAccessibility(){
 
 // AUTH
 async function signup(){
+    console.log('📝 signup() called');
     const u=document.getElementById('signupUsername').value.trim();
     const e=document.getElementById('signupEmail').value.trim();
     const pwd=document.getElementById('signupPassword').value;
 
+    console.log('Form data:', {u,e,pwd});
     if(!u||!e||!pwd) return alert('כל השדות חובה');
     if(!e.includes('@')) return alert('אימייל לא חוקי');
     if(pwd.length<4) return alert('סיסמה חייבת להיות לפחות 4 תווים');
 
+    console.log('Sending to:', `${API}/api/auth/signup`);
     const r=await fetch(`${API}/api/auth/signup`,{
         method:'POST',
         headers:{'Content-Type':'application/json'},
         body:JSON.stringify({username:u,email:e,password:pwd})
     });
     const d=await r.json();
+    console.log('Response:', {status: r.status, data: d});
     if(!r.ok) return alert(d.error);
 
     localStorage.setItem('tempUserId',d.id);
     document.getElementById('signupVerificationTarget').textContent=`אימייל: ${d.email}`;
     document.getElementById('signupVerificationCode').textContent=d.verificationCode;
     document.getElementById('signupVerificationForm').classList.remove('hidden');
-    document.querySelectorAll('#signupForm .btn')[1].style.display='none';
+    document.querySelectorAll('#signupForm > .btn')[0].style.display='none';
 
     alert('✅ קוד אימות: '+d.verificationCode+'\n\n(קוד זה הופץ גם בקונסול השרת)');
 }
@@ -673,12 +738,14 @@ async function verifySignup(){
 async function login(){
     const u=document.getElementById('loginUsername').value;
     const p=document.getElementById('loginPassword').value;
+    const rememberMe=document.getElementById('rememberMe').checked;
     if(!u||!p) return alert('שדות חובה');
     const r=await fetch(`${API}/api/auth/login`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:u,password:p})});
     const d=await r.json();
     if(!r.ok) return alert(d.error);
     localStorage.setItem('userId',d.id);
     localStorage.setItem('username',u);
+    if(rememberMe){localStorage.setItem('rememberMe','true');localStorage.setItem('savedUsername',u);}else{localStorage.removeItem('rememberMe');}
     location.reload();
 }
 
@@ -765,15 +832,30 @@ async function loadFridge(){
     const r=await fetch(`${API}/api/fridge`);
     const items=await r.json();
     const l=document.getElementById('fridgeList');
-    l.innerHTML=items.length?items.map(i=>`<div class="food-item">
+    const PERISHABLES=['חלב','גבינה','יוגורט','חמאה','ביצים','בשר','דגים','חומוס'];
+    const needsExpiry=(name)=>PERISHABLES.some(p=>name.includes(p));
+    l.innerHTML=items.length?items.map((i,idx)=>`<div class="food-item" style="animation-delay:${idx*50}ms">
         <div class="item-info">
             <div class="item-name">${i.item_name}</div>
-            <div class="item-stats">${i.quantity||'כמות לא מוגדרת'}</div>
+            <div class="item-stats">${i.quantity||'כמות'} ${i.expiry_date?'| 📅 '+i.expiry_date:''}</div>
         </div>
         <div class="item-actions">
+            ${needsExpiry(i.item_name)?`<button class="btn-edit btn-small" onclick="setExpiryDate(${i.id})">📅</button>`:''}
             <button class="btn-delete btn-small" onclick="deleteFridgeItem(${i.id})">🗑️</button>
         </div>
     </div>`).join(''):'<p style="color:var(--dim);text-align:center;padding:30px;">המקרר ריק 🧊</p>';
+}
+
+function setExpiryDate(itemId){
+    const expiryDate=prompt('תאריך תפוגה (YYYY-MM-DD):', new Date().toISOString().split('T')[0]);
+    if(!expiryDate) return;
+    fetch(`${API}/api/fridge/set-expiry`,{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({fridgeItemId:itemId,expiryDate})
+    }).then(r=>r.json()).then(d=>{
+        if(d.success){alert('✅ תאריך תפוגה עודכן!');loadFridge();}
+    });
 }
 
 async function deleteFridgeItem(id){
@@ -898,7 +980,7 @@ async function loadFoodLog(){
     const d=new Date().toISOString().split('T')[0];
     const r=await fetch(`${API}/api/food-log/${d}`);
     const items=await r.json();
-    document.getElementById('foodLog').innerHTML=items.length?items.map(i=>`<div class="food-item">
+    document.getElementById('foodLog').innerHTML=items.length?items.map((i,idx)=>`<div class="food-item" style="animation-delay:${idx*50}ms">
         <div class="item-info">
             <div class="item-name">${i.food_name}</div>
             <div class="item-stats">${i.meal_type} | ${i.calories} קק"ל | חלבון: ${i.protein}ג | פחמימות: ${i.carbs}ג | שומנים: ${i.fat}ג</div>
@@ -985,7 +1067,7 @@ async function loadWorkoutLog(){
     const d=new Date().toISOString().split('T')[0];
     const r=await fetch(`${API}/api/workouts/${d}`);
     const items=await r.json();
-    document.getElementById('workoutLog').innerHTML=items.length?items.map(i=>`<div class="workout-card">
+    document.getElementById('workoutLog').innerHTML=items.length?items.map((i,idx)=>`<div class="workout-card" style="animation-delay:${idx*50}ms">
         <div class="item-info">
             <div class="item-name">${i.exercise_name}</div>
             <div class="item-stats">${i.duration} דק' | ${i.sets} סטים × ${i.reps} חזרות | ${i.location} | ${i.difficulty}</div>
@@ -1004,15 +1086,28 @@ async function deleteWorkout(id){
 async function loadSavedRecipes(){
     const r=await fetch(`${API}/api/recipes/saved`);
     const recipes=await r.json();
-    document.getElementById('savedRecipesList').innerHTML=recipes.length?recipes.map(rec=>`<div class="recipe-card">
+    document.getElementById('savedRecipesList').innerHTML=recipes.length?recipes.map((rec,idx)=>`<div class="recipe-card" style="animation-delay:${idx*50}ms">
         <div class="item-info">
             <div class="item-name">${rec.recipe_name}</div>
             <div class="item-stats" style="white-space:pre-wrap;max-height:100px;overflow:hidden;">${rec.recipe_content.substring(0,150)}...</div>
         </div>
         <div class="item-actions">
+            <button class="btn-edit btn-small" onclick="shareRecipe(${rec.id})">📤 שתף</button>
             <button class="btn-delete btn-small" onclick="deleteRecipe(${rec.id})">🗑️</button>
         </div>
     </div>`).join(''):'<p style="color:var(--dim);text-align:center;padding:30px;">אין מתכונים שמורים עדיין ❤️</p>';
+}
+
+function shareRecipe(recipeId){
+    const email=prompt('שתף עם אימייל:');
+    if(!email) return;
+    fetch(`${API}/api/recipes/share`,{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({recipeId,shareWithEmail:email})
+    }).then(r=>r.json()).then(d=>{
+        if(d.success)alert(d.message);else alert('שגיאה: '+d.error);
+    });
 }
 
 async function deleteRecipe(id){
@@ -1038,7 +1133,7 @@ async function addShoppingItem(name,qty,reason){
 async function loadShoppingList(){
     const r=await fetch(`${API}/api/shopping-list`);
     const items=await r.json();
-    document.getElementById('shoppingList').innerHTML=items.length?items.map(i=>`<div class="shopping-item">
+    document.getElementById('shoppingList').innerHTML=items.length?items.map((i,idx)=>`<div class="shopping-item" style="animation-delay:${idx*50}ms">
         <div class="item-info">
             <div class="item-name">${i.item_name}</div>
             <div class="item-stats">${i.quantity||'כמות'} ${i.reason?'| '+i.reason:''}</div>
@@ -1064,6 +1159,12 @@ async function init(){
         document.documentElement.style.letterSpacing='1px';
     }
 
+    // Remember me functionality
+    if(localStorage.getItem('rememberMe')&&localStorage.getItem('savedUsername')){
+        document.getElementById('loginUsername').value=localStorage.getItem('savedUsername');
+        document.getElementById('rememberMe').checked=true;
+    }
+
     const userId=localStorage.getItem('userId');
     if(!userId){
         document.getElementById('authScreen').style.display='flex';
@@ -1078,6 +1179,217 @@ async function init(){
         loadWorkoutLog();
         loadSavedRecipes();
         loadShoppingList();
+    }
+}
+
+// MEAL PHOTO ANALYSIS
+async function analyzeMealPhoto(){
+    const input = document.getElementById('mealPhotoInput');
+    const mealType = document.getElementById('mealTypeSelect').value;
+
+    if(!input.files[0]) return alert('בחר תמונה');
+
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+        const base64 = e.target.result.split(',')[1];
+
+        try {
+            const res = await fetch(`${API}/api/meal/analyze-photo`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({photoBase64: base64, mealType})
+            });
+
+            const data = await res.json();
+            if(!res.ok) return alert('שגיאה: ' + data.error);
+
+            const analysis = data.analysis;
+            document.getElementById('mealAnalysisResult').innerHTML = `
+                <div style="background:rgba(74,222,128,0.1);border:2px solid var(--green);border-radius:12px;padding:20px;margin-top:20px;">
+                    <h3>📊 תוצאות הניתוח</h3>
+                    <p><strong>מוצרים שזוהו:</strong> ${analysis.foods.map(f => f.name).join(', ')}</p>
+                    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:15px;">
+                        <div style="background:var(--panel);padding:15px;border-radius:10px;text-align:center;">
+                            <div style="font-size:24px;font-weight:bold;color:var(--green);">${analysis.totalCalories}</div>
+                            <div style="color:var(--dim);font-size:0.9em;">קלוריות</div>
+                        </div>
+                        <div style="background:var(--panel);padding:15px;border-radius:10px;text-align:center;">
+                            <div style="font-size:24px;font-weight:bold;color:#ff6b6b;">${analysis.protein}ג</div>
+                            <div style="color:var(--dim);font-size:0.9em;">חלבון</div>
+                        </div>
+                        <div style="background:var(--panel);padding:15px;border-radius:10px;text-align:center;">
+                            <div style="font-size:24px;font-weight:bold;color:#fbbf24;">${analysis.carbs}ג</div>
+                            <div style="color:var(--dim);font-size:0.9em;">פחמימות</div>
+                        </div>
+                        <div style="background:var(--panel);padding:15px;border-radius:10px;text-align:center;">
+                            <div style="font-size:24px;font-weight:bold;color:#a78bfa;">${analysis.fat}ג</div>
+                            <div style="color:var(--dim);font-size:0.9em;">שומנים</div>
+                        </div>
+                    </div>
+                    <div style="display:flex;gap:10px;margin-top:15px;">
+                        <button class="btn" onclick="editMealPhoto(${data.id}, '${JSON.stringify(analysis.foods).replace(/"/g, '&quot;')}', ${analysis.totalCalories}, ${analysis.protein}, ${analysis.carbs}, ${analysis.fat})" style="flex:1;background:linear-gradient(135deg,#60a5fa,#3b82f6);">✏️ ערוך פרטים</button>
+                        <button class="btn" onclick="saveMealToLog(${analysis.totalCalories}, ${analysis.protein}, ${analysis.carbs}, ${analysis.fat})" style="flex:1;">💾 שמור</button>
+                    </div>
+                    <p style="margin-top:15px;color:var(--green);font-weight:600;">✅ נשמר לתיעוד היומי שלך</p>
+                </div>
+            `;
+
+            document.getElementById('mealPhotoInput').value = '';
+            loadNutritionSummary();
+        } catch(e){
+            alert('שגיאה: ' + e.message);
+        }
+    };
+    reader.readAsDataURL(input.files[0]);
+}
+
+// EDIT MEAL PHOTO DETAILS
+function editMealPhoto(mealPhotoId, foods, calories, protein, carbs, fat){
+    const newCalories = prompt('קלוריות:', calories);
+    const newProtein = prompt('חלבון (גרם):', protein);
+    const newCarbs = prompt('פחמימות (גרם):', carbs);
+    const newFat = prompt('שומנים (גרם):', fat);
+
+    if(!newCalories || !newProtein) return;
+
+    fetch(`${API}/api/meal/edit-details`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+            mealPhotoId,
+            editedFoods: JSON.parse(foods),
+            calories: parseInt(newCalories),
+            protein: parseFloat(newProtein),
+            carbs: parseFloat(newCarbs),
+            fat: parseFloat(newFat)
+        })
+    }).then(r => r.json()).then(d => {
+        if(d.success) alert('✅ פרטים עודכנו!');
+    });
+}
+
+// FRIDGE PHOTO SCANNING
+async function scanFridgePhoto(){
+    const input = document.getElementById('fridgePhotoInput');
+
+    if(!input.files[0]) return alert('בחר תמונה');
+
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+        const base64 = e.target.result.split(',')[1];
+
+        try {
+            const res = await fetch(`${API}/api/fridge/scan-photo`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({photoBase64: base64})
+            });
+
+            const data = await res.json();
+            if(!res.ok) return alert('שגיאה: ' + data.error);
+
+            document.getElementById('fridgeScanResult').innerHTML = `
+                <div style="background:rgba(96,165,250,0.1);border:2px solid var(--blue);border-radius:12px;padding:20px;margin-top:20px;">
+                    <h3>✅ מוצרים שנוספו</h3>
+                    <p style="color:var(--green);font-weight:600;margin-bottom:15px;">הוספו ${data.addedItems} פריטים אל המקרר</p>
+                    <ul style="list-style:none;padding:0;">
+                        ${data.items.map(item => `<li style="padding:8px;border-bottom:1px solid var(--border);">📦 ${item.name} - ${item.quantity}</li>`).join('')}
+                    </ul>
+                </div>
+            `;
+
+            document.getElementById('fridgePhotoInput').value = '';
+            loadFridge();
+        } catch(e){
+            alert('שגיאה: ' + e.message);
+        }
+    };
+    reader.readAsDataURL(input.files[0]);
+}
+
+// FITNESS PROFILE - Set goal
+function setFitnessGoal(goal){
+    document.querySelector('input[type="hidden"][id="selectedFitnessGoal"]')?.remove();
+    const hidden = document.createElement('input');
+    hidden.type = 'hidden';
+    hidden.id = 'selectedFitnessGoal';
+    hidden.value = goal;
+    document.body.appendChild(hidden);
+    alert('✅ יעד נבחר: ' + goal);
+}
+
+async function saveFitnessProfile(){
+    const goal = document.getElementById('selectedFitnessGoal')?.value;
+    const dailyCalories = parseInt(document.getElementById('dailyCaloriesGoal').value);
+    const workoutsPerWeek = parseInt(document.getElementById('workoutsPerWeek').value);
+
+    if(!goal || !dailyCalories || !workoutsPerWeek) return alert('מלא את כל השדות');
+
+    try {
+        const res = await fetch(`${API}/api/fitness-profile/set-goal`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({goal, dailyCalories, workoutsPerWeek, protein: dailyCalories*0.3/4, carbs: dailyCalories*0.4/4, fat: dailyCalories*0.3/9})
+        });
+
+        const data = await res.json();
+        if(!res.ok) return alert('שגיאה: ' + data.error);
+
+        alert('✅ תוכנית הכושר נשמרה!');
+        loadFitnessProfile();
+    } catch(e){
+        alert('שגיאה: ' + e.message);
+    }
+}
+
+async function loadFitnessProfile(){
+    const res = await fetch(`${API}/api/fitness-profile`);
+    const profile = await res.json();
+
+    if(!profile.goal) return;
+
+    // Get workout plan
+    const planRes = await fetch(`${API}/api/fitness/plan`);
+    const plan = await planRes.json();
+
+    let planHTML = '';
+    if(plan.length > 0){
+        const grouped = {};
+        plan.forEach(p => {
+            grouped[p.day_number] = grouped[p.day_number] || [];
+            grouped[p.day_number].push(p);
+        });
+        planHTML = `<div style="margin-top:20px;"><h4>📅 תוכנית האימונים שלך</h4>` +
+            Object.keys(grouped).map(day => `
+            <div style="background:var(--panel);padding:15px;border-radius:10px;margin:10px 0;">
+                <strong>יום ${day}</strong>
+                ${grouped[day].map(e => `<p style="margin:5px 0;font-size:0.9em;">• ${e.exercise_name} - ${e.sets} סטים × ${e.reps} חזרות</p>`).join('')}
+            </div>`).join('') + `</div>`;
+    }
+
+    document.getElementById('fitnessProfileDisplay').innerHTML = `
+        <div style="background:var(--border);border-radius:12px;padding:20px;margin-top:20px;">
+            <h3>📋 התוכנית שלך</h3>
+            <p><strong>יעד:</strong> ${profile.goal}</p>
+            <p><strong>קלוריות יומיות:</strong> ${profile.daily_calories}</p>
+            <p><strong>אימונים בשבוע:</strong> ${profile.workouts_per_week}</p>
+            <button class="btn" onclick="generateWorkoutPlan('${profile.goal}')" style="margin-top:15px;">🤖 צור תוכנית אימונים</button>
+            ${planHTML}
+        </div>
+    `;
+}
+
+async function generateWorkoutPlan(goal){
+    if(!confirm('ליצור תוכנית אימונים חדשה?')) return;
+    const res = await fetch(`${API}/api/fitness/generate-plan`,{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({goal})
+    });
+    const data = await res.json();
+    if(data.success){
+        alert('✅ תוכנית אימונים נוצרה!');
+        loadFitnessProfile();
     }
 }
 
