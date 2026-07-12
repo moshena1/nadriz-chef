@@ -8,7 +8,13 @@ const transporter = configured
       auth: {
         user: process.env.GMAIL_USER,
         pass: process.env.GMAIL_APP_PASSWORD
-      }
+      },
+      // Some hosts throttle/block outbound SMTP silently (no error, just a
+      // hang). Fail fast so the request can fall back to showing the code
+      // instead of leaving the user staring at a spinner for 2 minutes.
+      connectionTimeout: 8000,
+      greetingTimeout: 8000,
+      socketTimeout: 8000
     })
   : null;
 
