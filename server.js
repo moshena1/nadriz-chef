@@ -54,7 +54,7 @@ app.post('/api/auth/signup', async (req, res) => {
       verificationCode: emailResult.sent ? undefined : user.verificationCode,
       message: emailResult.sent
         ? 'קוד אימות נשלח לאימייל שלך'
-        : `קוד אימות: ${user.verificationCode} (המייל לא הוגדר בשרת, הקוד מוצג כאן)`
+        : `קוד אימות: ${user.verificationCode} (לא הצלחנו לשלוח מייל, הקוד מוצג כאן)`
     });
   } catch (err) {
     res.status(400).json({ error: err.toString() });
@@ -122,7 +122,7 @@ app.post('/api/auth/forgot-password', async (req, res) => {
           resetCode: emailResult.sent ? undefined : code,
           message: emailResult.sent
             ? 'קוד איפוס נשלח לאימייל שלך'
-            : `קוד איפוס: ${code} (המייל לא הוגדר בשרת, הקוד מוצג כאן)`
+            : `קוד איפוס: ${code} (לא הצלחנו לשלוח מייל, הקוד מוצג כאן)`
         });
       }
     );

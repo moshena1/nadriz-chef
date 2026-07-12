@@ -804,7 +804,7 @@ async function signup(){
     document.getElementById('signupVerificationForm').classList.remove('hidden');
     document.querySelectorAll('#signupForm > .btn')[0].style.display='none';
 
-    alert(d.emailSent?'✅ קוד אימות נשלח לאימייל שלך! בדוק גם בספאם.':'✅ קוד אימות: '+d.verificationCode+'\n\n(המייל לא הוגדר בשרת)');
+    alert(d.emailSent?'✅ קוד אימות נשלח לאימייל שלך! בדוק גם בספאם.':'✅ קוד אימות: '+d.verificationCode+'\n\n(לא הצלחנו לשלוח מייל, הקוד מוצג כאן)');
 }
 
 async function verifySignup(){
@@ -921,7 +921,7 @@ async function requestPasswordReset(){
     localStorage.setItem('resetUserId',d.userId);
     document.getElementById('resetTokenDisplay').textContent=d.emailSent
         ? '📧 קוד האיפוס נשלח לאימייל שלך - בדוק גם בספאם'
-        : 'קוד האיפוס (המייל לא הוגדר בשרת): '+d.resetCode;
+        : 'לא הצלחנו לשלוח מייל, קוד האיפוס: '+d.resetCode;
     document.getElementById('resetTokenForm').classList.remove('hidden');
 }
 
