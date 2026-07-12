@@ -73,7 +73,7 @@ async function signup(username, email, password) {
 async function verifySignup(userId, code) {
   return new Promise((resolve, reject) => {
     db.get(
-      'SELECT * FROM verification_codes WHERE user_id = ? AND code = ? AND type = "signup" AND expires_at > datetime("now")',
+      "SELECT * FROM verification_codes WHERE user_id = ? AND code = ? AND type = 'signup' AND expires_at > datetime('now')",
       [userId, code],
       (err, row) => {
         if (err || !row) {

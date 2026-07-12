@@ -1,26 +1,11 @@
-const nodemailer = require('nodemailer');
+const fetch = require('node-fetch');
 
-const configured = !!(process.env.GMAIL_USER && process.env.GMAIL_APP_PASSWORD);
-
-const transporter = configured
-  ? nodemailer.createTransport({
-      service: 'gmail',
-      auth: {
-        user: process.env.GMAIL_USER,
-        pass: process.env.GMAIL_APP_PASSWORD
-      },
-      // Some hosts throttle/block outbound SMTP silently (no error, just a
-      // hang). Fail fast so the request can fall back to showing the code
-      // instead of leaving the user staring at a spinner for 2 minutes.
-      connectionTimeout: 8000,
-      greetingTimeout: 8000,
-      socketTimeout: 8000
-    })
-  : null;
+const configured = !!process.env.RESEND_API_KEY;
+const FROM = process.env.RESEND_FROM || 'NADRIZ CHEF <onboarding@resend.dev>';
 
 async function sendCodeEmail(to, code, type) {
   if (!configured) {
-    console.log(`⚠️ מייל לא מוגדר (GMAIL_USER/GMAIL_APP_PASSWORD חסרים). קוד ל-${to}: ${code}`);
+    console.log(`⚠️ מייל לא מוגדר (RESEND_API_KEY חסר). קוד ל-${to}: ${code}`);
     return { sent: false };
   }
 
@@ -43,12 +28,25 @@ async function sendCodeEmail(to, code, type) {
   `;
 
   try {
-    await transporter.sendMail({
-      from: `"NADRIZ CHEF" <${process.env.GMAIL_USER}>`,
-      to,
-      subject,
-      html
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 8000);
+
+    const r = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${process.env.RESEND_API_KEY}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ from: FROM, to: [to], subject, html }),
+      signal: controller.signal
     });
+    clearTimeout(timeout);
+
+    if (!r.ok) {
+      const errBody = await r.text();
+      console.error('❌ שליחת מייל נכשלה (Resend):', r.status, errBody);
+      return { sent: false, error: errBody };
+    }
     return { sent: true };
   } catch (err) {
     console.error('❌ שליחת מייל נכשלה:', err.message);

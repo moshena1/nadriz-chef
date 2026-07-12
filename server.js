@@ -141,7 +141,7 @@ app.post('/api/auth/reset-password', async (req, res) => {
   }
 
   db.get(
-    'SELECT * FROM verification_codes WHERE user_id = ? AND code = ? AND type = "reset" AND expires_at > datetime("now")',
+    "SELECT * FROM verification_codes WHERE user_id = ? AND code = ? AND type = 'reset' AND expires_at > datetime('now')",
     [userId, code],
     async (err, row) => {
       if (err || !row) return res.status(400).json({ error: 'קוד לא חוקי או פג תוקף' });
@@ -890,12 +890,13 @@ app.get('/', (req, res) => {
 });
 
 const PORT_NUM = parseInt(PORT) || 3001;
-const server = app.listen(PORT_NUM, '0.0.0.0', () => {
-  console.log(`✅ Smart Fridge Server running at http://localhost:${PORT_NUM}`);
-  console.log('🔐 API Key loaded from .env (not exposed to client)');
-});
-
-server.on('error', (err) => {
-  console.error('❌ Server error:', err.message);
-  process.exit(1);
+db.ready.then(() => {
+  const server = app.listen(PORT_NUM, '0.0.0.0', () => {
+    console.log(`✅ Smart Fridge Server running at http://localhost:${PORT_NUM}`);
+    console.log('🔐 API Key loaded from .env (not exposed to client)');
+  });
+  server.on('error', (err) => {
+    console.error('❌ Server error:', err.message);
+    process.exit(1);
+  });
 });
