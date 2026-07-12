@@ -1,8 +1,23 @@
 const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 const db = require('./database');
+
+const JWT_SECRET = process.env.JWT_SECRET || 'nadriz-dev-secret-change-in-production';
 
 function generateVerificationCode() {
   return Math.floor(100000 + Math.random() * 900000).toString();
+}
+
+function generateToken(userId) {
+  return jwt.sign({ userId }, JWT_SECRET, { expiresIn: '30d' });
+}
+
+function verifyToken(token) {
+  try {
+    return jwt.verify(token, JWT_SECRET).userId;
+  } catch (e) {
+    return null;
+  }
 }
 
 async function signup(username, email, password) {
@@ -100,4 +115,4 @@ async function login(username, password) {
   });
 }
 
-module.exports = { signup, login, verifySignup, generateVerificationCode };
+module.exports = { signup, login, verifySignup, generateVerificationCode, generateToken, verifyToken };

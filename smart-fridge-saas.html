@@ -412,17 +412,21 @@
         <div id="forgotPasswordForm" class="hidden">
             <div style="text-align:center;margin-bottom:20px;">
                 <h2 style="font-size:1.5em;margin-bottom:10px;">🔐 אפס סיסמה</h2>
-                <p style="color:var(--dim);font-size:0.9em;">הכנס את שם המשתמש שלך</p>
+                <p style="color:var(--dim);font-size:0.9em;">הכנס את האימייל שאיתו נרשמת ונשלח לך קוד איפוס</p>
             </div>
             <div class="form-group">
-                <label>שם משתמש</label>
-                <input type="text" id="forgotUsername" placeholder="שם משתמש שלך">
+                <label>אימייל</label>
+                <input type="email" id="forgotEmail" placeholder="your@email.com">
             </div>
-            <button class="btn" onclick="requestPasswordReset()">קבל קוד איפוס</button>
+            <button class="btn" onclick="requestPasswordReset()">שלח קוד איפוס למייל</button>
 
             <div id="resetTokenForm" class="hidden" style="margin-top:20px;border-top:2px solid var(--border);padding-top:20px;">
                 <div style="background:rgba(74,222,128,0.2);border:1px solid rgba(74,222,128,0.3);border-radius:12px;padding:15px;margin-bottom:20px;text-align:center;">
                     <p style="color:var(--green);font-weight:600;word-break:break-all;" id="resetTokenDisplay"></p>
+                </div>
+                <div class="form-group">
+                    <label>קוד איפוס (מהמייל)</label>
+                    <input type="text" id="resetCodeInput" placeholder="הכנס את קוד 6 הספרות" maxlength="6">
                 </div>
                 <div class="form-group">
                     <label>סיסמה חדשה</label>
@@ -712,6 +716,23 @@
 <script>
 const API = window.location.origin;
 
+// Wrapper around fetch that attaches the JWT (if we have one) and auto-logs-out
+// on a 401 so a dead/expired token can't leave the UI stuck showing stale data.
+async function apiFetch(url, options={}){
+    const token = localStorage.getItem('authToken');
+    const headers = Object.assign({}, options.headers||{}, token ? {'Authorization':'Bearer '+token} : {});
+    const r = await fetch(url, Object.assign({}, options, {headers}));
+    if(r.status===401 && !url.includes('/api/auth/')){
+        localStorage.removeItem('userId');
+        localStorage.removeItem('username');
+        localStorage.removeItem('isLoggedIn');
+        localStorage.removeItem('authToken');
+        alert('החיבור פג תוקף, יש להתחבר מחדש');
+        location.reload();
+    }
+    return r;
+}
+
 // THEME
 function setTheme(t){
     console.log('🎨 Setting theme to:', t);
@@ -768,7 +789,7 @@ async function signup(){
     if(pwd.length<4) return alert('סיסמה חייבת להיות לפחות 4 תווים');
 
     console.log('Sending to:', `${API}/api/auth/signup`);
-    const r=await fetch(`${API}/api/auth/signup`,{
+    const r=await apiFetch(`${API}/api/auth/signup`,{
         method:'POST',
         headers:{'Content-Type':'application/json'},
         body:JSON.stringify({username:u,email:e,password:pwd})
@@ -779,11 +800,11 @@ async function signup(){
 
     localStorage.setItem('tempUserId',d.id);
     document.getElementById('signupVerificationTarget').textContent=`אימייל: ${d.email}`;
-    document.getElementById('signupVerificationCode').textContent=d.verificationCode;
+    document.getElementById('signupVerificationCode').textContent=d.emailSent?'נשלח לאימייל שלך 📧':d.verificationCode;
     document.getElementById('signupVerificationForm').classList.remove('hidden');
     document.querySelectorAll('#signupForm > .btn')[0].style.display='none';
 
-    alert('✅ קוד אימות: '+d.verificationCode+'\n\n(קוד זה הופץ גם בקונסול השרת)');
+    alert(d.emailSent?'✅ קוד אימות נשלח לאימייל שלך! בדוק גם בספאם.':'✅ קוד אימות: '+d.verificationCode+'\n\n(המייל לא הוגדר בשרת)');
 }
 
 async function verifySignup(){
@@ -794,7 +815,7 @@ async function verifySignup(){
     if(code.length!==6) return alert('קוד חייב להיות 6 ספרות');
 
     try{
-        const r=await fetch(`${API}/api/auth/verify-signup`,{
+        const r=await apiFetch(`${API}/api/auth/verify-signup`,{
             method:'POST',
             headers:{'Content-Type':'application/json'},
             body:JSON.stringify({userId:parseInt(userId),code})
@@ -808,6 +829,7 @@ async function verifySignup(){
         localStorage.setItem('userId',userId);
         localStorage.setItem('username',username);
         localStorage.setItem('isLoggedIn','true');
+        localStorage.setItem('authToken',d.token);
 
         console.log('✅ Signup verified. Saved:', {userId,username});
 
@@ -827,7 +849,7 @@ async function login(){
     if(!u||!p) return alert('שדות חובה');
 
     try{
-        const r=await fetch(`${API}/api/auth/login`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:u,password:p})});
+        const r=await apiFetch(`${API}/api/auth/login`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:u,password:p})});
         const d=await r.json();
         if(!r.ok) return alert(d.error);
 
@@ -835,6 +857,7 @@ async function login(){
         localStorage.setItem('userId',d.id.toString());
         localStorage.setItem('username',u);
         localStorage.setItem('isLoggedIn','true');
+        localStorage.setItem('authToken',d.token);
         if(rememberMe){
             localStorage.setItem('rememberMe','true');
             localStorage.setItem('savedUsername',u);
@@ -851,7 +874,7 @@ async function login(){
 
 async function logout(){
     try{
-        await fetch(`${API}/api/auth/logout`,{method:'POST'});
+        await apiFetch(`${API}/api/auth/logout`,{method:'POST'});
     }catch(e){
         console.log('Logout fetch error (non-blocking):', e);
     }
@@ -861,6 +884,7 @@ async function logout(){
     localStorage.removeItem('username');
     localStorage.removeItem('isLoggedIn');
     localStorage.removeItem('tempUserId');
+    localStorage.removeItem('authToken');
 
     console.log('✅ Logged out');
     setTimeout(()=>location.reload(),300);
@@ -888,36 +912,38 @@ function showLoginForm(){
 }
 
 async function requestPasswordReset(){
-    const username=document.getElementById('forgotUsername').value.trim();
-    if(!username) return alert('הכנס שם משתמש');
-    const r=await fetch(`${API}/api/auth/forgot-password`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username})});
+    const email=document.getElementById('forgotEmail').value.trim();
+    if(!email) return alert('הכנס אימייל');
+    const r=await apiFetch(`${API}/api/auth/forgot-password`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email})});
     const d=await r.json();
     if(!r.ok) return alert(d.error);
 
     localStorage.setItem('resetUserId',d.userId);
-    document.getElementById('resetTokenDisplay').textContent='קוד האיפוס:\n'+d.resetCode+'\n\nנשלח ל: '+d.email;
+    document.getElementById('resetTokenDisplay').textContent=d.emailSent
+        ? '📧 קוד האיפוס נשלח לאימייל שלך - בדוק גם בספאם'
+        : 'קוד האיפוס (המייל לא הוגדר בשרת): '+d.resetCode;
     document.getElementById('resetTokenForm').classList.remove('hidden');
-    alert('✅ קוד איפוס: '+d.resetCode+'\n\n(קוד זה הופץ גם בקונסול השרת)');
 }
 
 async function resetPassword(){
     const userId=localStorage.getItem('resetUserId');
-    const code=document.getElementById('resetTokenDisplay').textContent.split('\n')[1];
+    const code=document.getElementById('resetCodeInput').value.trim();
     const newPwd=document.getElementById('newPassword').value;
     const confirmPwd=document.getElementById('confirmPassword').value;
 
     if(!userId||!code||!newPwd||!confirmPwd) return alert('מלא את כל השדות');
+    if(code.length!==6) return alert('קוד חייב להיות 6 ספרות');
     if(newPwd!==confirmPwd) return alert('הסיסמאות לא תואמות');
     if(newPwd.length<4) return alert('סיסמה חייבת להיות לפחות 4 תווים');
 
-    const r=await fetch(`${API}/api/auth/reset-password`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({userId:parseInt(userId),code,newPassword:newPwd,confirmPassword:confirmPwd})});
+    const r=await apiFetch(`${API}/api/auth/reset-password`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({userId:parseInt(userId),code,newPassword:newPwd,confirmPassword:confirmPwd})});
     const d=await r.json();
     if(!r.ok) return alert(d.error);
 
     localStorage.removeItem('resetUserId');
     alert('✅ הסיסמה אופסה בהצלחה!');
     showLoginForm();
-    document.getElementById('loginUsername').value=document.getElementById('forgotUsername').value;
+    document.getElementById('loginUsername').value='';
 }
 
 function switchTab(t){
@@ -933,7 +959,7 @@ async function addItem(){
     const n=document.getElementById('itemName').value.trim();
     if(!n) return alert('הכנס שם מוצר');
     const q=document.getElementById('itemQuantity').value;
-    const r=await fetch(`${API}/api/fridge`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({item_name:n,quantity:q})});
+    const r=await apiFetch(`${API}/api/fridge`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({item_name:n,quantity:q})});
     if(!r.ok) return alert('שגיאה');
     document.getElementById('itemName').value='';
     document.getElementById('itemQuantity').value='';
@@ -941,7 +967,7 @@ async function addItem(){
 }
 
 async function loadFridge(){
-    const r=await fetch(`${API}/api/fridge`);
+    const r=await apiFetch(`${API}/api/fridge`);
     const items=await r.json();
     const l=document.getElementById('fridgeList');
     const PERISHABLES=['חלב','גבינה','יוגורט','חמאה','ביצים','בשר','דגים','חומוס'];
@@ -961,7 +987,7 @@ async function loadFridge(){
 function setExpiryDate(itemId){
     const expiryDate=prompt('תאריך תפוגה (YYYY-MM-DD):', new Date().toISOString().split('T')[0]);
     if(!expiryDate) return;
-    fetch(`${API}/api/fridge/set-expiry`,{
+    apiFetch(`${API}/api/fridge/set-expiry`,{
         method:'POST',
         headers:{'Content-Type':'application/json'},
         body:JSON.stringify({fridgeItemId:itemId,expiryDate})
@@ -971,7 +997,7 @@ function setExpiryDate(itemId){
 }
 
 async function deleteFridgeItem(id){
-    const r=await fetch(`${API}/api/fridge/${id}`,{method:'DELETE'});
+    const r=await apiFetch(`${API}/api/fridge/${id}`,{method:'DELETE'});
     if(!r.ok) return alert('שגיאה');
     await addShoppingItem('מוצר מהמקרר','','הוסר מהמקרר');
     loadFridge();
@@ -980,14 +1006,14 @@ async function deleteFridgeItem(id){
 async function fetchReceipt(){
     const url=document.getElementById('receiptUrl').value;
     if(!url) return alert('הכנס קישור');
-    const r=await fetch(`${API}/api/fetch-receipt`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url})});
+    const r=await apiFetch(`${API}/api/fetch-receipt`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url})});
     const d=await r.json();
     if(!r.ok) return alert(d.error);
     if(d.content&&d.content[0]&&d.content[0].text){
         try{
             const items=JSON.parse(d.content[0].text.replace(/```json|```/g,''));
             for(const item of items){
-                await fetch(`${API}/api/fridge`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({item_name:item,quantity:'מקבלה'})});
+                await apiFetch(`${API}/api/fridge`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({item_name:item,quantity:'מקבלה'})});
             }
             alert('✅ המוצרים נוספו!');
             loadFridge();
@@ -1007,7 +1033,7 @@ async function loadFridgeSuggestions(){
     document.getElementById('fridgeSuggestionsContent').innerHTML='⏳ מייצר הצעות...';
 
     try{
-        const res=await fetch(`${API}/api/claude`,{
+        const res=await apiFetch(`${API}/api/claude`,{
             method:'POST',
             headers:{'Content-Type':'application/json'},
             body:JSON.stringify({
@@ -1039,7 +1065,7 @@ async function getRecipeQuiz(){
 
     if(!fridgeItems) return alert('תחילה הוסף מוצרים למקרר');
 
-    const r=await fetch(`${API}/api/claude`,{
+    const r=await apiFetch(`${API}/api/claude`,{
         method:'POST',
         headers:{'Content-Type':'application/json'},
         body:JSON.stringify({
@@ -1059,7 +1085,7 @@ async function searchRecipe(){
 
     const prompt=fridgeItems ? `תן מתכון עבור: ${q} בעברית (4 שלבים) שמשתמש בחומרים הבאים מהמקרר שלי: ${fridgeItems}. ציין קלוריות משוערות. אם אי אפשר, שאול למה.` : `תן מתכון עבור: ${q} בעברית (4 שלבים). ציין קלוריות משוערות.`;
 
-    const r=await fetch(`${API}/api/claude`,{
+    const r=await apiFetch(`${API}/api/claude`,{
         method:'POST',
         headers:{'Content-Type':'application/json'},
         body:JSON.stringify({
@@ -1073,7 +1099,7 @@ async function searchRecipe(){
 }
 
 async function saveRecipe(name,content){
-    const r=await fetch(`${API}/api/recipes/save`,{
+    const r=await apiFetch(`${API}/api/recipes/save`,{
         method:'POST',
         headers:{'Content-Type':'application/json'},
         body:JSON.stringify({recipe_name:name,recipe_content:content,category:'מתכון'})
@@ -1093,7 +1119,7 @@ async function saveNutritionProfile(){
     const g=document.getElementById('goal').value;
     const dp=document.getElementById('dietaryPrefs').value;
     if(!age||!height||!cw||!tw||!al||!g) return alert('כמלא את כל השדות');
-    const r=await fetch(`${API}/api/nutrition/profile`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({age,height,current_weight:cw,target_weight:tw,activity_level:al,goal:g,dietary_preferences:dp})});
+    const r=await apiFetch(`${API}/api/nutrition/profile`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({age,height,current_weight:cw,target_weight:tw,activity_level:al,goal:g,dietary_preferences:dp})});
     if(!r.ok) return alert('שגיאה');
     alert('✅ הפרופיל נשמר!');
 }
@@ -1103,7 +1129,7 @@ async function addFood(){
     if(!n) return alert('הכנס שם מזון');
     const q=document.getElementById('foodQuantity').value;
     const mt=document.getElementById('mealType').value;
-    const r=await fetch(`${API}/api/claude`,{
+    const r=await apiFetch(`${API}/api/claude`,{
         method:'POST',
         headers:{'Content-Type':'application/json'},
         body:JSON.stringify({
@@ -1116,7 +1142,7 @@ async function addFood(){
     try{
         const txt=d.content[0].text.replace(/```json|```/g,'').trim();
         const nut=JSON.parse(txt);
-        const fr=await fetch(`${API}/api/food-log`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({food_name:n,quantity:q,meal_type:mt,...nut})});
+        const fr=await apiFetch(`${API}/api/food-log`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({food_name:n,quantity:q,meal_type:mt,...nut})});
         if(!fr.ok) throw new Error();
         document.getElementById('foodName').value='';
         document.getElementById('foodQuantity').value='';
@@ -1129,7 +1155,7 @@ async function addFood(){
 
 async function loadFoodLog(){
     const d=new Date().toISOString().split('T')[0];
-    const r=await fetch(`${API}/api/food-log/${d}`);
+    const r=await apiFetch(`${API}/api/food-log/${d}`);
     const items=await r.json();
     document.getElementById('foodLog').innerHTML=items.length?items.map((i,idx)=>`<div class="food-item" style="animation-delay:${idx*50}ms">
         <div class="item-info">
@@ -1141,7 +1167,7 @@ async function loadFoodLog(){
 }
 
 async function deleteFood(id){
-    const r=await fetch(`${API}/api/food-log/${id}`,{method:'DELETE'});
+    const r=await apiFetch(`${API}/api/food-log/${id}`,{method:'DELETE'});
     if(!r.ok) return alert('שגיאה');
     loadFoodLog();
     loadNutritionSummary();
@@ -1149,7 +1175,7 @@ async function deleteFood(id){
 
 async function loadNutritionSummary(){
     const d=new Date().toISOString().split('T')[0];
-    const r=await fetch(`${API}/api/food-log/${d}`);
+    const r=await apiFetch(`${API}/api/food-log/${d}`);
     const items=await r.json();
     const t={calories:0,protein:0,carbs:0,fat:0};
     items.forEach(i=>{t.calories+=i.calories||0;t.protein+=i.protein||0;t.carbs+=i.carbs||0;t.fat+=i.fat||0;});
@@ -1178,13 +1204,13 @@ async function loadNutritionSummary(){
 }
 
 async function getNutritionRecommendation(){
-    const pr=await fetch(`${API}/api/nutrition/profile`);
+    const pr=await apiFetch(`${API}/api/nutrition/profile`);
     const prof=await pr.json();
     const d=new Date().toISOString().split('T')[0];
-    const fr=await fetch(`${API}/api/food-log/${d}`);
+    const fr=await apiFetch(`${API}/api/food-log/${d}`);
     const foods=await fr.json();
     const fl=foods.map(f=>`${f.food_name} (${f.calories} קק"ל)`).join(', ')||'לא';
-    const r=await fetch(`${API}/api/claude`,{
+    const r=await apiFetch(`${API}/api/claude`,{
         method:'POST',
         headers:{'Content-Type':'application/json'},
         body:JSON.stringify({
@@ -1205,7 +1231,7 @@ async function addWorkout(){
     const re=parseInt(document.getElementById('reps').value);
     const lo=document.getElementById('location').value;
     const di=document.getElementById('difficulty').value;
-    const r=await fetch(`${API}/api/workouts`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({exercise_name:en,duration:du,sets:se,reps:re,location:lo,difficulty:di})});
+    const r=await apiFetch(`${API}/api/workouts`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({exercise_name:en,duration:du,sets:se,reps:re,location:lo,difficulty:di})});
     if(!r.ok) return alert('שגיאה');
     document.getElementById('exerciseName').value='';
     document.getElementById('duration').value='';
@@ -1216,7 +1242,7 @@ async function addWorkout(){
 
 async function loadWorkoutLog(){
     const d=new Date().toISOString().split('T')[0];
-    const r=await fetch(`${API}/api/workouts/${d}`);
+    const r=await apiFetch(`${API}/api/workouts/${d}`);
     const items=await r.json();
     document.getElementById('workoutLog').innerHTML=items.length?items.map((i,idx)=>`<div class="workout-card" style="animation-delay:${idx*50}ms">
         <div class="item-info">
@@ -1228,14 +1254,14 @@ async function loadWorkoutLog(){
 }
 
 async function deleteWorkout(id){
-    const r=await fetch(`${API}/api/workouts/${id}`,{method:'DELETE'});
+    const r=await apiFetch(`${API}/api/workouts/${id}`,{method:'DELETE'});
     if(!r.ok) return alert('שגיאה');
     loadWorkoutLog();
 }
 
 // SAVED RECIPES
 async function loadSavedRecipes(){
-    const r=await fetch(`${API}/api/recipes/saved`);
+    const r=await apiFetch(`${API}/api/recipes/saved`);
     const recipes=await r.json();
     document.getElementById('savedRecipesList').innerHTML=recipes.length?recipes.map((rec,idx)=>`<div class="recipe-card" style="animation-delay:${idx*50}ms">
         <div class="item-info">
@@ -1252,7 +1278,7 @@ async function loadSavedRecipes(){
 function shareRecipe(recipeId){
     const email=prompt('שתף עם אימייל:');
     if(!email) return;
-    fetch(`${API}/api/recipes/share`,{
+    apiFetch(`${API}/api/recipes/share`,{
         method:'POST',
         headers:{'Content-Type':'application/json'},
         body:JSON.stringify({recipeId,shareWithEmail:email})
@@ -1262,7 +1288,7 @@ function shareRecipe(recipeId){
 }
 
 async function deleteRecipe(id){
-    const r=await fetch(`${API}/api/recipes/save/${id}`,{method:'DELETE'});
+    const r=await apiFetch(`${API}/api/recipes/save/${id}`,{method:'DELETE'});
     if(!r.ok) return alert('שגיאה');
     loadSavedRecipes();
 }
@@ -1273,7 +1299,7 @@ async function addShoppingItem(name,qty,reason){
     if(!n) return alert('הכנס פריט');
     const q=qty||document.getElementById('shoppingQuantity').value;
     const r=reason||document.getElementById('shoppingReason').value;
-    const res=await fetch(`${API}/api/shopping-list`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({item_name:n,quantity:q,reason:r})});
+    const res=await apiFetch(`${API}/api/shopping-list`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({item_name:n,quantity:q,reason:r})});
     if(!res.ok) return alert('שגיאה');
     document.getElementById('shoppingItem').value='';
     document.getElementById('shoppingQuantity').value='';
@@ -1282,7 +1308,7 @@ async function addShoppingItem(name,qty,reason){
 }
 
 async function loadShoppingList(){
-    const r=await fetch(`${API}/api/shopping-list`);
+    const r=await apiFetch(`${API}/api/shopping-list`);
     const items=await r.json();
     document.getElementById('shoppingList').innerHTML=items.length?items.map((i,idx)=>`<div class="shopping-item" style="animation-delay:${idx*50}ms">
         <div class="item-info">
@@ -1294,7 +1320,7 @@ async function loadShoppingList(){
 }
 
 async function deleteShoppingItem(id){
-    const r=await fetch(`${API}/api/shopping-list/${id}`,{method:'DELETE'});
+    const r=await apiFetch(`${API}/api/shopping-list/${id}`,{method:'DELETE'});
     if(!r.ok) return alert('שגיאה');
     loadShoppingList();
 }
@@ -1384,7 +1410,7 @@ async function analyzeMealPhoto(){
         const base64 = e.target.result.split(',')[1];
 
         try {
-            const res = await fetch(`${API}/api/meal/analyze-photo`, {
+            const res = await apiFetch(`${API}/api/meal/analyze-photo`, {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({photoBase64: base64, mealType})
@@ -1442,7 +1468,7 @@ function editMealPhoto(mealPhotoId, foods, calories, protein, carbs, fat){
 
     if(!newCalories || !newProtein) return;
 
-    fetch(`${API}/api/meal/edit-details`, {
+    apiFetch(`${API}/api/meal/edit-details`, {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({
@@ -1469,7 +1495,7 @@ async function scanFridgePhoto(){
         const base64 = e.target.result.split(',')[1];
 
         try {
-            const res = await fetch(`${API}/api/fridge/scan-photo`, {
+            const res = await apiFetch(`${API}/api/fridge/scan-photo`, {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({photoBase64: base64})
@@ -1600,7 +1626,7 @@ async function generateWorkoutPlan(){
 אל תוסף תיאורים מילוליים, רק את התוכנית הגולמית.`;
 
     try{
-        const res=await fetch(`${API}/api/claude`,{
+        const res=await apiFetch(`${API}/api/claude`,{
             method:'POST',
             headers:{'Content-Type':'application/json'},
             body:JSON.stringify({
@@ -1664,7 +1690,7 @@ async function saveFitnessProfile(){
     if(!goal || !dailyCalories || !workoutsPerWeek) return alert('מלא את כל השדות');
 
     try {
-        const res = await fetch(`${API}/api/fitness-profile/set-goal`, {
+        const res = await apiFetch(`${API}/api/fitness-profile/set-goal`, {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({goal, dailyCalories, workoutsPerWeek, protein: dailyCalories*0.3/4, carbs: dailyCalories*0.4/4, fat: dailyCalories*0.3/9})
@@ -1681,13 +1707,13 @@ async function saveFitnessProfile(){
 }
 
 async function loadFitnessProfile(){
-    const res = await fetch(`${API}/api/fitness-profile`);
+    const res = await apiFetch(`${API}/api/fitness-profile`);
     const profile = await res.json();
 
     if(!profile.goal) return;
 
     // Get workout plan
-    const planRes = await fetch(`${API}/api/fitness/plan`);
+    const planRes = await apiFetch(`${API}/api/fitness/plan`);
     const plan = await planRes.json();
 
     let planHTML = '';

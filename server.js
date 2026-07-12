@@ -3,8 +3,8 @@ const express = require('express');
 const cors = require('cors');
 const fetch = require('node-fetch');
 const path = require('path');
-const session = require('express-session');
-const { signup, login, verifySignup } = require('./auth');
+const { signup, login, verifySignup, generateToken, verifyToken } = require('./auth');
+const { sendCodeEmail } = require('./mailer');
 const db = require('./database');
 
 const app = express();
@@ -16,11 +16,17 @@ console.log('🔧 Config loaded: PORT=' + PORT + ', API_KEY=' + (API_KEY ? 'set'
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
-app.use(session({
-  secret: 'nadriz-secret-key',
-  resave: false,
-  saveUninitialized: true
-}));
+
+// Stateless auth: userId is derived from a JWT in the Authorization header,
+// not from a server-side session. This survives server restarts/cold starts
+// (e.g. Render free tier), unlike an in-memory session store.
+function getUserId(req) {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+  if (!token) return null;
+  return verifyToken(token);
+}
+
 // API routes BEFORE static files
 app.use('/api', express.Router());
 
@@ -38,12 +44,17 @@ app.post('/api/auth/signup', async (req, res) => {
 
   try {
     const user = await signup(username, email, password);
+    const emailResult = await sendCodeEmail(user.email, user.verificationCode, 'signup');
+
     res.json({
       id: user.id,
       username: user.username,
       email: user.email,
-      verificationCode: user.verificationCode,
-      message: user.message
+      emailSent: emailResult.sent,
+      verificationCode: emailResult.sent ? undefined : user.verificationCode,
+      message: emailResult.sent
+        ? 'קוד אימות נשלח לאימייל שלך'
+        : `קוד אימות: ${user.verificationCode} (המייל לא הוגדר בשרת, הקוד מוצג כאן)`
     });
   } catch (err) {
     res.status(400).json({ error: err.toString() });
@@ -56,8 +67,8 @@ app.post('/api/auth/verify-signup', async (req, res) => {
 
   try {
     const result = await verifySignup(userId, code);
-    req.session.userId = userId;
-    res.json(result);
+    const token = generateToken(userId);
+    res.json({ ...result, token, userId });
   } catch (err) {
     res.status(400).json({ error: err.toString() });
   }
@@ -69,29 +80,29 @@ app.post('/api/auth/login', async (req, res) => {
 
   try {
     const user = await login(username, password);
-    req.session.userId = user.id;
-    res.json({ id: user.id, username: user.username });
+    const token = generateToken(user.id);
+    res.json({ id: user.id, username: user.username, token });
   } catch (err) {
     res.status(400).json({ error: err });
   }
 });
 
 app.post('/api/auth/logout', (req, res) => {
-  req.session.destroy();
+  // Stateless (JWT) auth - nothing to invalidate server-side, client just drops the token.
   res.json({ success: true });
 });
 
 app.get('/api/auth/status', (req, res) => {
-  res.json({ userId: req.session.userId || null });
+  res.json({ userId: getUserId(req) });
 });
 
-// Password reset - request reset
-app.post('/api/auth/forgot-password', (req, res) => {
-  const { username } = req.body;
-  if (!username) return res.status(400).json({ error: 'שם משתמש חסר' });
+// Password reset - request reset (by email, like every other app)
+app.post('/api/auth/forgot-password', async (req, res) => {
+  const { email } = req.body;
+  if (!email) return res.status(400).json({ error: 'אימייל חסר' });
 
-  db.get('SELECT id, email FROM users WHERE username = ?', [username], (err, user) => {
-    if (err || !user) return res.status(400).json({ error: 'שם משתמש לא קיים' });
+  db.get('SELECT id, email FROM users WHERE email = ?', [email], async (err, user) => {
+    if (err || !user) return res.status(400).json({ error: 'לא נמצא חשבון עם אימייל זה' });
 
     const code = Math.floor(100000 + Math.random() * 900000).toString();
     const expiresAt = new Date(Date.now() + 600000).toISOString(); // 10 minutes
@@ -99,17 +110,19 @@ app.post('/api/auth/forgot-password', (req, res) => {
     db.run(
       'INSERT INTO verification_codes (user_id, email, code, type, expires_at) VALUES (?, ?, ?, ?, ?)',
       [user.id, user.email, code, 'reset', expiresAt],
-      function(err) {
+      async function(err) {
         if (err) return res.status(500).json({ error: err.message });
 
-        console.log(`🔐 Password reset code for ${user.email}: ${code}`);
+        const emailResult = await sendCodeEmail(user.email, code, 'reset');
 
         res.json({
           success: true,
           userId: user.id,
-          resetCode: code,
-          email: user.email.replace(/(.{2})(.*)(@.*)/, '$1***$3'),
-          message: `קוד איפוס: ${code} (הוצג בקונסול השרת)`
+          emailSent: emailResult.sent,
+          resetCode: emailResult.sent ? undefined : code,
+          message: emailResult.sent
+            ? 'קוד איפוס נשלח לאימייל שלך'
+            : `קוד איפוס: ${code} (המייל לא הוגדר בשרת, הקוד מוצג כאן)`
         });
       }
     );
@@ -153,7 +166,7 @@ app.post('/api/auth/reset-password', async (req, res) => {
 
 // ===== FRIDGE CRUD (with user isolation) =====
 app.get('/api/fridge', (req, res) => {
-  const userId = req.session.userId;
+  const userId = getUserId(req);
   if (!userId) return res.status(401).json({ error: 'לא מחובר' });
 
   db.all('SELECT * FROM fridge_items WHERE user_id = ? ORDER BY created_at DESC', [userId], (err, rows) => {
@@ -164,7 +177,7 @@ app.get('/api/fridge', (req, res) => {
 
 app.post('/api/fridge', (req, res) => {
   const { item_name, quantity } = req.body;
-  const userId = req.session.userId;
+  const userId = getUserId(req);
   if (!userId) return res.status(401).json({ error: 'לא מחובר' });
 
   db.run(
@@ -178,7 +191,7 @@ app.post('/api/fridge', (req, res) => {
 });
 
 app.delete('/api/fridge/:id', (req, res) => {
-  const userId = req.session.userId;
+  const userId = getUserId(req);
   if (!userId) return res.status(401).json({ error: 'לא מחובר' });
 
   db.run(
@@ -193,7 +206,7 @@ app.delete('/api/fridge/:id', (req, res) => {
 
 // Proxy endpoint for Claude API
 app.post('/api/claude', async (req, res) => {
-  const userId = req.session.userId;
+  const userId = getUserId(req);
   if (!userId) return res.status(401).json({ error: 'לא מחובר' });
 
   try {
@@ -300,7 +313,7 @@ app.post('/api/fetch-receipt', async (req, res) => {
 
 // ===== NUTRITION ENDPOINTS =====
 app.post('/api/nutrition/profile', (req, res) => {
-  const userId = req.session.userId;
+  const userId = getUserId(req);
   if (!userId) return res.status(401).json({ error: 'לא מחובר' });
 
   const { age, height, current_weight, target_weight, dietary_preferences, activity_level, goal } = req.body;
@@ -317,7 +330,7 @@ app.post('/api/nutrition/profile', (req, res) => {
 });
 
 app.get('/api/nutrition/profile', (req, res) => {
-  const userId = req.session.userId;
+  const userId = getUserId(req);
   if (!userId) return res.status(401).json({ error: 'לא מחובר' });
 
   db.get('SELECT * FROM user_nutrition WHERE user_id = ?', [userId], (err, row) => {
@@ -327,7 +340,7 @@ app.get('/api/nutrition/profile', (req, res) => {
 });
 
 app.post('/api/food-log', (req, res) => {
-  const userId = req.session.userId;
+  const userId = getUserId(req);
   if (!userId) return res.status(401).json({ error: 'לא מחובר' });
 
   const { food_name, quantity, meal_type, calories, protein, carbs, fat, date } = req.body;
@@ -344,7 +357,7 @@ app.post('/api/food-log', (req, res) => {
 });
 
 app.get('/api/food-log/:date', (req, res) => {
-  const userId = req.session.userId;
+  const userId = getUserId(req);
   if (!userId) return res.status(401).json({ error: 'לא מחובר' });
 
   const date = req.params.date || new Date().toISOString().split('T')[0];
@@ -360,7 +373,7 @@ app.get('/api/food-log/:date', (req, res) => {
 });
 
 app.delete('/api/food-log/:id', (req, res) => {
-  const userId = req.session.userId;
+  const userId = getUserId(req);
   if (!userId) return res.status(401).json({ error: 'לא מחובר' });
 
   db.run(
@@ -375,7 +388,7 @@ app.delete('/api/food-log/:id', (req, res) => {
 
 // ===== SAVED RECIPES =====
 app.get('/api/recipes/saved', (req, res) => {
-  const userId = req.session.userId;
+  const userId = getUserId(req);
   if (!userId) return res.status(401).json({ error: 'לא מחובר' });
 
   db.all('SELECT * FROM saved_recipes WHERE user_id = ? ORDER BY saved_at DESC', [userId], (err, rows) => {
@@ -385,7 +398,7 @@ app.get('/api/recipes/saved', (req, res) => {
 });
 
 app.post('/api/recipes/save', (req, res) => {
-  const userId = req.session.userId;
+  const userId = getUserId(req);
   if (!userId) return res.status(401).json({ error: 'לא מחובר' });
 
   const { recipe_name, recipe_content, category, calories, protein } = req.body;
@@ -401,7 +414,7 @@ app.post('/api/recipes/save', (req, res) => {
 });
 
 app.delete('/api/recipes/save/:id', (req, res) => {
-  const userId = req.session.userId;
+  const userId = getUserId(req);
   if (!userId) return res.status(401).json({ error: 'לא מחובר' });
 
   db.run(
@@ -416,7 +429,7 @@ app.delete('/api/recipes/save/:id', (req, res) => {
 
 // ===== SHOPPING LIST =====
 app.get('/api/shopping-list', (req, res) => {
-  const userId = req.session.userId;
+  const userId = getUserId(req);
   if (!userId) return res.status(401).json({ error: 'לא מחובר' });
 
   db.all('SELECT * FROM shopping_list WHERE user_id = ? AND purchased = 0 ORDER BY created_at DESC', [userId], (err, rows) => {
@@ -426,7 +439,7 @@ app.get('/api/shopping-list', (req, res) => {
 });
 
 app.post('/api/shopping-list', (req, res) => {
-  const userId = req.session.userId;
+  const userId = getUserId(req);
   if (!userId) return res.status(401).json({ error: 'לא מחובר' });
 
   const { item_name, quantity, reason } = req.body;
@@ -442,7 +455,7 @@ app.post('/api/shopping-list', (req, res) => {
 });
 
 app.delete('/api/shopping-list/:id', (req, res) => {
-  const userId = req.session.userId;
+  const userId = getUserId(req);
   if (!userId) return res.status(401).json({ error: 'לא מחובר' });
 
   db.run(
@@ -457,7 +470,7 @@ app.delete('/api/shopping-list/:id', (req, res) => {
 
 // ===== WORKOUT LOGS =====
 app.get('/api/workouts/:date', (req, res) => {
-  const userId = req.session.userId;
+  const userId = getUserId(req);
   if (!userId) return res.status(401).json({ error: 'לא מחובר' });
 
   const date = req.params.date || new Date().toISOString().split('T')[0];
@@ -473,7 +486,7 @@ app.get('/api/workouts/:date', (req, res) => {
 });
 
 app.post('/api/workouts', (req, res) => {
-  const userId = req.session.userId;
+  const userId = getUserId(req);
   if (!userId) return res.status(401).json({ error: 'לא מחובר' });
 
   const { exercise_name, duration, sets, reps, location, difficulty } = req.body;
@@ -489,7 +502,7 @@ app.post('/api/workouts', (req, res) => {
 });
 
 app.delete('/api/workouts/:id', (req, res) => {
-  const userId = req.session.userId;
+  const userId = getUserId(req);
   if (!userId) return res.status(401).json({ error: 'לא מחובר' });
 
   db.run(
@@ -504,7 +517,7 @@ app.delete('/api/workouts/:id', (req, res) => {
 
 // MEAL PHOTO ANALYSIS - Vision-based calorie tracking
 app.post('/api/meal/analyze-photo', async (req, res) => {
-  const userId = req.session.userId;
+  const userId = getUserId(req);
   if (!userId) return res.status(401).json({ error: 'לא מחובר' });
 
   const { photoBase64, mealType } = req.body;
@@ -569,7 +582,7 @@ app.post('/api/meal/analyze-photo', async (req, res) => {
 
 // FRIDGE PHOTO SCANNING - AI detects products
 app.post('/api/fridge/scan-photo', async (req, res) => {
-  const userId = req.session.userId;
+  const userId = getUserId(req);
   if (!userId) return res.status(401).json({ error: 'לא מחובר' });
 
   const { photoBase64 } = req.body;
@@ -636,7 +649,7 @@ app.post('/api/fridge/scan-photo', async (req, res) => {
 
 // NUTRITION DAILY/WEEKLY/MONTHLY SUMMARY
 app.get('/api/nutrition/summary/:period', (req, res) => {
-  const userId = req.session.userId;
+  const userId = getUserId(req);
   if (!userId) return res.status(401).json({ error: 'לא מחובר' });
 
   const period = req.params.period; // 'daily', 'weekly', 'monthly'
@@ -665,7 +678,7 @@ app.get('/api/nutrition/summary/:period', (req, res) => {
 
 // FITNESS PROFILE - Set professional fitness goal
 app.post('/api/fitness-profile/set-goal', (req, res) => {
-  const userId = req.session.userId;
+  const userId = getUserId(req);
   if (!userId) return res.status(401).json({ error: 'לא מחובר' });
 
   const { goal, dailyCalories, protein, carbs, fat, workoutsPerWeek } = req.body;
@@ -685,7 +698,7 @@ app.post('/api/fitness-profile/set-goal', (req, res) => {
 
 // GET fitness profile
 app.get('/api/fitness-profile', (req, res) => {
-  const userId = req.session.userId;
+  const userId = getUserId(req);
   if (!userId) return res.status(401).json({ error: 'לא מחובר' });
 
   db.get('SELECT * FROM fitness_profiles WHERE user_id = ?', [userId], (err, row) => {
@@ -696,7 +709,7 @@ app.get('/api/fitness-profile', (req, res) => {
 
 // EDIT MEAL PHOTO DETAILS
 app.post('/api/meal/edit-details', (req, res) => {
-  const userId = req.session.userId;
+  const userId = getUserId(req);
   if (!userId) return res.status(401).json({ error: 'לא מחובר' });
 
   const { mealPhotoId, editedFoods, calories, protein, carbs, fat } = req.body;
@@ -721,7 +734,7 @@ app.post('/api/meal/edit-details', (req, res) => {
 
 // SMART EXPIRY DATE - only for specific items
 app.post('/api/fridge/set-expiry', (req, res) => {
-  const userId = req.session.userId;
+  const userId = getUserId(req);
   if (!userId) return res.status(401).json({ error: 'לא מחובר' });
 
   const { fridgeItemId, expiryDate } = req.body;
@@ -739,7 +752,7 @@ app.post('/api/fridge/set-expiry', (req, res) => {
 
 // GENERATE WORKOUT PLAN based on goal
 app.post('/api/fitness/generate-plan', async (req, res) => {
-  const userId = req.session.userId;
+  const userId = getUserId(req);
   if (!userId) return res.status(401).json({ error: 'לא מחובר' });
 
   const { goal } = req.body;
@@ -798,7 +811,7 @@ app.post('/api/fitness/generate-plan', async (req, res) => {
 
 // GET WORKOUT PLAN
 app.get('/api/fitness/plan', (req, res) => {
-  const userId = req.session.userId;
+  const userId = getUserId(req);
   if (!userId) return res.status(401).json({ error: 'לא מחובר' });
 
   db.all(
@@ -813,7 +826,7 @@ app.get('/api/fitness/plan', (req, res) => {
 
 // SHARE RECIPE
 app.post('/api/recipes/share', (req, res) => {
-  const userId = req.session.userId;
+  const userId = getUserId(req);
   if (!userId) return res.status(401).json({ error: 'לא מחובר' });
 
   const { recipeId, shareWithEmail } = req.body;
