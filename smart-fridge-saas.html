@@ -1068,6 +1068,16 @@ async function fetchReceipt(){
 // RECIPES
 let fridgeSuggestCategory='food';
 
+// The real fridge contents live in the DB (per-user), not localStorage -
+// this is the single source of truth for anything that needs "what's in
+// my fridge right now" (suggestions, quiz, search).
+async function getFridgeItemNames(){
+    const r=await apiFetch(`${API}/api/fridge`);
+    if(!r.ok) return [];
+    const items=await r.json();
+    return items.map(i=>i.item_name);
+}
+
 function setFridgeSuggestCategory(cat){
     fridgeSuggestCategory=cat;
     document.getElementById('fridgeSuggestCategoryFood').style.background=cat==='food'?'':'var(--border)';
@@ -1078,10 +1088,10 @@ function setFridgeSuggestCategory(cat){
 }
 
 async function loadFridgeSuggestions(){
-    const fridge=JSON.parse(localStorage.getItem('nadriz-fridge')||'[]');
-    if(fridge.length<2) return document.getElementById('fridgeSuggestions').style.display='none';
+    const fridgeNames=await getFridgeItemNames();
+    if(fridgeNames.length<2) return document.getElementById('fridgeSuggestions').style.display='none';
 
-    const items=fridge.map(i=>i.name).join(', ');
+    const items=fridgeNames.join(', ');
     const categoryLabel=fridgeSuggestCategory==='dessert'?'קינוחים':'ארוחות';
     document.getElementById('fridgeSuggestions').style.display='block';
     document.getElementById('fridgeSuggestionsContent').innerHTML='⏳ מייצר הצעות...';
@@ -1115,7 +1125,7 @@ async function getRecipeQuiz(){
     if(!type||!diff) return alert('בחר שתיים');
 
     const category=type==='food'?'אוכל':'קינוח';
-    const fridgeItems=JSON.parse(localStorage.getItem('nadriz-fridge')||'[]').map(i=>i.name).join(', ');
+    const fridgeItems=(await getFridgeItemNames()).join(', ');
 
     if(!fridgeItems) return alert('תחילה הוסף מוצרים למקרר');
 
@@ -1135,7 +1145,7 @@ async function getRecipeQuiz(){
 async function searchRecipe(){
     const q=document.getElementById('recipeSearch').value.trim();
     if(!q) return alert('הכנס שם מתכון');
-    const fridgeItems=JSON.parse(localStorage.getItem('nadriz-fridge')||'[]').map(i=>i.name).join(', ');
+    const fridgeItems=(await getFridgeItemNames()).join(', ');
 
     const prompt=fridgeItems ? `תן מתכון עבור: ${q} בעברית (4 שלבים) שמשתמש בחומרים הבאים מהמקרר שלי: ${fridgeItems}. ציין קלוריות משוערות. אם אי אפשר, שאול למה.` : `תן מתכון עבור: ${q} בעברית (4 שלבים). ציין קלוריות משוערות.`;
 
