@@ -665,6 +665,16 @@
                     <button class="btn" onclick="generateWorkoutPlan()" style="width:100%;margin-bottom:15px;">🤖 צור תוכנית אימונים</button>
                     <div id="workoutPlanDisplay"></div>
                 </div>
+
+                <!-- EXERCISE DEMO LOOKUP -->
+                <h3>👁️ איך עושים את זה נכון?</h3>
+                <div style="background:var(--border);border-radius:12px;padding:20px;margin-bottom:20px;">
+                    <div style="display:grid;grid-template-columns:1fr auto;gap:10px;margin-bottom:15px;">
+                        <input type="text" id="exerciseDemoInput" placeholder="שם התרגיל, למשל: סקוואט">
+                        <button class="btn" onclick="showExerciseDemo()" style="width:auto;">👁️ הצג הדגמה</button>
+                    </div>
+                    <div id="exerciseDemoOutput"></div>
+                </div>
             </div>
 
             <!-- RECIPES TAB -->
@@ -674,6 +684,10 @@
                 <!-- AUTO SUGGESTIONS FROM FRIDGE -->
                 <div id="fridgeSuggestions" style="background:rgba(74,222,128,0.1);border:2px solid var(--green);border-radius:12px;padding:20px;margin-bottom:20px;display:none;">
                     <h3>💡 המלצות בהתאם למוצרים שלך</h3>
+                    <div style="display:flex;gap:10px;margin:12px 0;">
+                        <button id="fridgeSuggestCategoryFood" class="btn btn-small" onclick="setFridgeSuggestCategory('food')" style="width:auto;">🍗 אוכל</button>
+                        <button id="fridgeSuggestCategoryDessert" class="btn btn-small" onclick="setFridgeSuggestCategory('dessert')" style="width:auto;background:var(--border);color:var(--text);">🍰 קינוח</button>
+                    </div>
                     <div id="fridgeSuggestionsContent"></div>
                 </div>
 
@@ -966,22 +980,50 @@ async function addItem(){
     loadFridge();
 }
 
+function daysUntilExpiry(dateStr){
+    const today=new Date();today.setHours(0,0,0,0);
+    const d=new Date(dateStr);d.setHours(0,0,0,0);
+    return Math.round((d-today)/86400000);
+}
+
+function expiryLabel(days){
+    if(days<0) return `פג תוקף לפני ${Math.abs(days)} ימים`;
+    if(days===0) return 'פג תוקף היום';
+    if(days===1) return 'פג תוקף מחר';
+    return `עוד ${days} ימים`;
+}
+
 async function loadFridge(){
     const r=await apiFetch(`${API}/api/fridge`);
     const items=await r.json();
     const l=document.getElementById('fridgeList');
-    const PERISHABLES=['חלב','גבינה','יוגורט','חמאה','ביצים','בשר','דגים','חומוס'];
-    const needsExpiry=(name)=>PERISHABLES.some(p=>name.includes(p));
-    l.innerHTML=items.length?items.map((i,idx)=>`<div class="food-item" style="animation-delay:${idx*50}ms">
+
+    const expiring=items.filter(i=>i.expiry_date && daysUntilExpiry(i.expiry_date)<=3);
+    const banner=expiring.length?`<div style="background:rgba(239,68,68,0.15);border:2px solid var(--red);border-radius:12px;padding:14px 18px;margin-bottom:16px;">
+        <strong>⚠️ ${expiring.length} מוצרים פגי תוקף בקרוב</strong>
+        <div style="margin-top:8px;display:grid;gap:4px;font-size:0.9em;">
+            ${expiring.map(i=>`<div>🔴 ${i.item_name} - ${expiryLabel(daysUntilExpiry(i.expiry_date))}</div>`).join('')}
+        </div>
+    </div>`:'';
+
+    const list=items.length?items.map((i,idx)=>{
+        const d=i.expiry_date?daysUntilExpiry(i.expiry_date):null;
+        const urgent=d!==null&&d<=3;
+        const border=urgent?`border:2px solid ${d<0?'var(--red)':'var(--orange)'};`:'';
+        const expiryText=i.expiry_date?` | 📅 ${i.expiry_date} (${expiryLabel(d)})`:'';
+        return `<div class="food-item" style="animation-delay:${idx*50}ms;${border}">
         <div class="item-info">
             <div class="item-name">${i.item_name}</div>
-            <div class="item-stats">${i.quantity||'כמות'} ${i.expiry_date?'| 📅 '+i.expiry_date:''}</div>
+            <div class="item-stats">${i.quantity||'כמות'}${expiryText}</div>
         </div>
         <div class="item-actions">
-            ${needsExpiry(i.item_name)?`<button class="btn-edit btn-small" onclick="setExpiryDate(${i.id})">📅</button>`:''}
+            <button class="btn-edit btn-small" onclick="setExpiryDate(${i.id})" title="קבע תאריך תפוגה">📅</button>
             <button class="btn-delete btn-small" onclick="deleteFridgeItem(${i.id})">🗑️</button>
         </div>
-    </div>`).join(''):'<p style="color:var(--dim);text-align:center;padding:30px;">המקרר ריק 🧊</p>';
+    </div>`;
+    }).join(''):'<p style="color:var(--dim);text-align:center;padding:30px;">המקרר ריק 🧊</p>';
+
+    l.innerHTML=banner+list;
 }
 
 function setExpiryDate(itemId){
@@ -1024,11 +1066,23 @@ async function fetchReceipt(){
 }
 
 // RECIPES
+let fridgeSuggestCategory='food';
+
+function setFridgeSuggestCategory(cat){
+    fridgeSuggestCategory=cat;
+    document.getElementById('fridgeSuggestCategoryFood').style.background=cat==='food'?'':'var(--border)';
+    document.getElementById('fridgeSuggestCategoryFood').style.color=cat==='food'?'':'var(--text)';
+    document.getElementById('fridgeSuggestCategoryDessert').style.background=cat==='dessert'?'':'var(--border)';
+    document.getElementById('fridgeSuggestCategoryDessert').style.color=cat==='dessert'?'':'var(--text)';
+    loadFridgeSuggestions();
+}
+
 async function loadFridgeSuggestions(){
     const fridge=JSON.parse(localStorage.getItem('nadriz-fridge')||'[]');
     if(fridge.length<2) return document.getElementById('fridgeSuggestions').style.display='none';
 
     const items=fridge.map(i=>i.name).join(', ');
+    const categoryLabel=fridgeSuggestCategory==='dessert'?'קינוחים':'ארוחות';
     document.getElementById('fridgeSuggestions').style.display='block';
     document.getElementById('fridgeSuggestionsContent').innerHTML='⏳ מייצר הצעות...';
 
@@ -1039,7 +1093,7 @@ async function loadFridgeSuggestions(){
             body:JSON.stringify({
                 model:'claude-haiku-4-5-20251001',
                 max_tokens:300,
-                messages:[{role:'user',content:`בהתאם לרכיבים הבאים שלי: ${items}\nצור 3 הצעות מתכון קצרות בעברית (שם + 1 משפט תיאור) שניתן להכין עם דברים אלה בלבד. כל הצעה בשורה חדשה.`}]
+                messages:[{role:'user',content:`בהתאם לרכיבים הבאים שלי: ${items}\nצור 3 הצעות ${categoryLabel} קצרות בעברית (שם + 1 משפט תיאור) שניתן להכין עם דברים אלה בלבד. כל הצעה בשורה חדשה.`}]
             })
         });
         const d=await res.json();
@@ -1051,7 +1105,7 @@ async function loadFridgeSuggestions(){
             </div>
         `;
     }catch(e){
-        document.getElementById('fridgeSuggestions').style.display='none';
+        document.getElementById('fridgeSuggestionsContent').innerHTML='<p style="color:var(--dim);">לא ניתן להביא הצעות כרגע</p>';
     }
 }
 
@@ -1679,6 +1733,36 @@ function clearWorkoutPlan(){
         localStorage.removeItem('workoutPlan');
         localStorage.removeItem('workoutPlanGoal');
         document.getElementById('workoutPlanDisplay').innerHTML='';
+    }
+}
+
+async function showExerciseDemo(name){
+    name=name||document.getElementById('exerciseDemoInput').value.trim();
+    if(!name) return alert('הכנס שם תרגיל');
+    document.getElementById('exerciseDemoInput').value=name;
+
+    const out=document.getElementById('exerciseDemoOutput');
+    out.innerHTML='⏳ טוען הדגמה...';
+
+    const youtubeUrl='https://www.youtube.com/results?search_query='+encodeURIComponent(name+' תרגיל הדגמה נכונה form');
+
+    try{
+        const res=await apiFetch(`${API}/api/claude`,{
+            method:'POST',
+            headers:{'Content-Type':'application/json'},
+            body:JSON.stringify({
+                model:'claude-haiku-4-5-20251001',
+                max_tokens:400,
+                messages:[{role:'user',content:`אתה מאמן כושר מקצועי. עבור התרגיל "${name}", תן בעברית:\n1. איך מבצעים אותו - 3-4 שלבים קצרים וברורים\n2. קבוצות שרירים עיקריות שעובדות\n3. 2-3 דגשים חשובים / טעויות נפוצות להימנע מהן\nהיה תמציתי וממוקד.`}]
+            })
+        });
+        const d=await res.json();
+        out.innerHTML=`
+            <div style="background:var(--panel);border-radius:12px;padding:18px;white-space:pre-wrap;line-height:1.6;margin-bottom:12px;">${d.content[0].text}</div>
+            <a href="${youtubeUrl}" target="_blank" rel="noopener" class="btn" style="display:block;text-align:center;text-decoration:none;background:linear-gradient(135deg,var(--red),#ff5252);">🎥 חפש הדגמת וידאו ב-YouTube</a>
+        `;
+    }catch(e){
+        out.innerHTML=`<p style="color:var(--dim);">לא הצלחנו לטעון הסבר כרגע. <a href="${youtubeUrl}" target="_blank" rel="noopener" style="color:var(--green);">חפש הדגמה ב-YouTube</a></p>`;
     }
 }
 
